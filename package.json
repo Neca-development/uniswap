@@ -5,15 +5,18 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ethersproject/address": "^5.0.10",
-    "@ethersproject/contracts": "^5.0.10",
-    "@ethersproject/providers": "^5.0.22",
-    "@ethersproject/solidity": "^5.0.9",
-    "@uniswap/sdk": "^3.0.3"
+    "@uniswap/sdk": "^3.0.3",
+    "ethers": "^5.0.31",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "dotenv": "^8.2.0",
+    "nodemon": "^2.0.7"
   }
 }
