@@ -1,23 +1,23 @@
-const UNISWAP = require('@uniswap/sdk');
-const ETHERS = require('ethers');
+const { ChainId, Fetcher, Route, Trade, TokenAmount, TradeType } = require('@uniswap/sdk');
+const { ethers } = require('ethers');
 
 const [getCountWithDecimals] = require('./utils');
 
 async function getTrade(inputTokenA, inputTokenB, count){
-  const chainId = UNISWAP.ChainId.MAINNET;
+  const chainId =  ChainId.ROPSTEN;
 
-  const tokenAAddress = ETHERS.ethers.utils.getAddress(inputTokenA);
-  const tokenA = await UNISWAP.Fetcher.fetchTokenData(chainId, tokenAAddress);
+  const tokenAAddress = ethers.utils.getAddress(inputTokenA);
+  const tokenA = await Fetcher.fetchTokenData(chainId, tokenAAddress);
 
-  const tokenBAddress = ETHERS.ethers.utils.getAddress(inputTokenB);
-  const tokenB = await UNISWAP.Fetcher.fetchTokenData(chainId, tokenBAddress);
+  const tokenBAddress = ethers.utils.getAddress(inputTokenB);
+  const tokenB = await Fetcher.fetchTokenData(chainId, tokenBAddress);
 
-  const pair = await UNISWAP.Fetcher.fetchPairData(tokenA, tokenB);
+  const pair = await Fetcher.fetchPairData(tokenA, tokenB);
   
-  const route = new UNISWAP.Route([pair], tokenA);
+  const route = new Route([pair], tokenA);
   const amountIn = getCountWithDecimals(count || 1, tokenA.decimals);
 
-  const trade = new UNISWAP.Trade(route, new UNISWAP.TokenAmount(tokenA, amountIn), UNISWAP.TradeType.EXACT_INPUT);
+  const trade = new Trade(route, new TokenAmount(tokenA, amountIn), TradeType.EXACT_INPUT);
 
   return {tokenA, tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade}
 }
