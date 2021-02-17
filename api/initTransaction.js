@@ -17,7 +17,7 @@ async function initTransaction(inputTokenA, inputTokenB, inputCount, inputSlippa
   const value = ethers.BigNumber.from(trade.inputAmount.raw.toString()).toHexString();
 
   // PROVIDER SETTINGS
-  const provider = ethers.getDefaultProvider('mainnet', {
+  const provider = ethers.getDefaultProvider('ropsten', {
     infura: {
         projectId: process.env.INFURA_PROJECT_ID,
         projectSecret: process.env.INFURA_PROJECT_SECRET,
@@ -25,6 +25,7 @@ async function initTransaction(inputTokenA, inputTokenB, inputCount, inputSlippa
     etherscan: process.env.ETHERSCAN_API_KEY
   });
 
+  const gasLimit = ethers.BigNumber.from(300000).toHexString();
   const gasPrice = (await provider.getGasPrice()).toHexString();
 
   // WALLET SETTINGS
@@ -34,8 +35,9 @@ async function initTransaction(inputTokenA, inputTokenB, inputCount, inputSlippa
   // CONTRACT INIT (we may add other contracts)
   const uniswap = new ethers.Contract('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'], account);
   
+  
   // TRANSACTION INIT
-  const tx = await uniswap.swapExactETHForTokens(amountOutMin, path, to, deadline, {value, gasPrice});
+  const tx = await uniswap.swapExactETHForTokens(amountOutMin, path, to, deadline, {value, gasPrice, gasLimit});
 
   console.log(`Transaction hash ${tx.hash}`);
 
