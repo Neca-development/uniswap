@@ -1,25 +1,24 @@
-const { ChainId, Fetcher, Route, Trade, TokenAmount, TradeType } = require('@uniswap/sdk');
-const { ethers } = require('ethers');
+const { WETH, ChainId, Fetcher, Route, Trade, TokenAmount, TradeType } = require('@uniswap/sdk');
 
-const [getCountWithDecimals] = require('./utils');
+const Web3 = require('web3');
+const [ getCountWithDecimals ] = require('../utils');
 
-async function getTrade(inputTokenA, inputTokenB, count){
+async function getTrade(inputTokenB, count){
+  let web3 = new Web3(process.env.INFURA_WSS_ROPSTEN);
   const chainId =  ChainId.ROPSTEN;
 
-  const tokenAAddress = ethers.utils.getAddress(inputTokenA);
-  const tokenA = await Fetcher.fetchTokenData(chainId, tokenAAddress);
-
-  const tokenBAddress = ethers.utils.getAddress(inputTokenB);
+  const tokenBAddress = web3.utils.toChecksumAddress(inputTokenB);
   const tokenB = await Fetcher.fetchTokenData(chainId, tokenBAddress);
 
-  const pair = await Fetcher.fetchPairData(tokenA, tokenB);
+  const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
   
-  const route = new Route([pair], tokenA);
-  const amountIn = getCountWithDecimals(count || 1, tokenA.decimals);
+  const route = new Route([pair], WETH[chainId]);
 
-  const trade = new Trade(route, new TokenAmount(tokenA, amountIn), TradeType.EXACT_INPUT);
+  const amountIn = getCountWithDecimals(count || 1, WETH[chainId].decimals);
 
-  return {tokenA, tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade}
+  const trade = new Trade(route, new TokenAmount(WETH[chainId], amountIn), TradeType.EXACT_INPUT);
+
+  return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
 }
 
 module.exports = getTrade;

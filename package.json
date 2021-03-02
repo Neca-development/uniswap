@@ -4,15 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "server": "nodemon index.js",
+    "client": "npm run start --prefix client",
+    "mainnet": "cross-env NODE-ENV=mainnet concurrently \"npm run server\" \"npm run client\"",
+    "ropsten": "cross-env NODE-ENV=ropsten concurrently \"npm run server\" \"npm run client\""
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@uniswap/sdk": "^3.0.3",
+    "concurrently": "^6.0.0",
+    "cors": "^2.8.5",
+    "ethereum-input-data-decoder": "^0.3.1",
     "ethers": "^5.0.31",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "web3": "^1.3.4"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
