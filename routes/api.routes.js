@@ -71,7 +71,7 @@ router.get('/getTrade', async (req, res) => {
 
 router.get('/getTransaction', async (req, res) => {
   try {
-    res.json(await initTransaction(req.query.tokenA, req.query.tokenB, req.query.count, req.query.slippage, req.query.deadline))
+    res.json(await initTransaction(req.query.tokenB, req.query.count, req.query.slippage, req.query.deadline))
   } catch (e) {
     console.log(e);
     res.status(500).json({
