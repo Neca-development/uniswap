@@ -7,6 +7,17 @@ const getExactTokenLiquidityTransactions = require('../api/getExactTokenLiquidit
 const getLiquidityTransactions = require('../api/getLiquidityTransactions');
 const getPairLiquidity = require('../api/getPairLiquidity');
 const getBalance = require('../api/getBalance');
+const getCurrentBlockNumber = require('../api/getCurrentBlockNumber');
+
+router.get('/getCurrentBlockNumber', async (req, res) => {
+  try {
+    res.json(await getCurrentBlockNumber());
+  } catch (e) {
+    res.status(500).json({
+      message: e,
+    });
+  }
+});
 
 router.get('/getExactTokenLiquidityTransactions', async (req, res) => {
   try {
