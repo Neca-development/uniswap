@@ -7,8 +7,8 @@ async function getPairLiquidity (tokenAddress){
   const chainId = ChainId.ROPSTEN;
 
   const tokenChecksummedAddress = web3.utils.toChecksumAddress(tokenAddress);
-  const tokenA = await Fetcher.fetchTokenData(chainId, tokenChecksummedAddress);
-  const pair = await Fetcher.fetchPairData(WETH[chainId], tokenA);
+  const tokenB = await Fetcher.fetchTokenData(chainId, tokenChecksummedAddress);
+  const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
   
   const tokenABI = [
     {
@@ -36,7 +36,7 @@ async function getPairLiquidity (tokenAddress){
 
   function getDecimals(tokenAddress){
     if(tokenAddress != WETH[chainId].address){
-      const { decimals } = tokenA;
+      const { decimals } = tokenB;
       return decimals;
     }
 
