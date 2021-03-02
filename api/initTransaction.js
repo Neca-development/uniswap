@@ -22,7 +22,7 @@ async function initTransaction(inputTokenB, inputCount, inputSlippage, inputDead
   const gasPrice = (await provider.getGasPrice()).toHexString();
 
   // CONTRACT INIT (we may add other contracts)
-  const uniswap = new ethers.Contract('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', [
+  const uniswap = new ethers.Contract(process.env.ROUTER_ADDRESS, [
     'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'
   ], account);
   
