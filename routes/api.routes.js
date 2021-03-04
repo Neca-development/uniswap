@@ -29,7 +29,7 @@ router.get('/getExactTokenLiquidityTransactions', async (req, res) => {
       });
     }
   } else {
-    res.status(500).json({
+    res.status(400).json({
       message: 'Add token address to request'
     });
   }
@@ -45,7 +45,7 @@ router.get('/getPairLiquidity', async (req, res) => {
       });
     }
   } else {
-    res.status(500).json({
+    res.status(400).json({
       message: 'Add token address to request'
     });
   }
@@ -71,7 +71,7 @@ router.get('/getBalance', async (req, res) => {
       });
     }
   } else {
-    res.status(500).json({
+    res.status(400).json({
       message: 'Add wallet address to request'
     });
   }
@@ -87,7 +87,7 @@ router.get('/getTrade', async (req, res) => {
       });
     }
   } else {
-    res.status(500).json({
+    res.status(400).json({
       message: 'Add token address and ETH count to request'
     });
   }
@@ -104,7 +104,7 @@ router.get('/getTransaction', async (req, res) => {
       });
     }
   } else {
-    res.status(500).json({
+    res.status(400).json({
       message: 'Add token address, ETH count, slippage in percents and deadline in minutes to request'
     });
   }
