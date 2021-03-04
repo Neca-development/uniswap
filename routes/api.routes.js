@@ -1,53 +1,113 @@
 const { Router } = require('express');
 const router = Router();
 
-const UNISWAP = require('@uniswap/sdk');
-const ETHERS = require('ethers');
+const getTrade = require('../api/getTrade');
+const initTransaction = require('../api/initTransaction');
+const getExactTokenLiquidityTransactions = require('../api/getExactTokenLiquidityTransactions');
+const getLiquidityTransactions = require('../api/getLiquidityTransactions');
+const getPairLiquidity = require('../api/getPairLiquidity');
+const getBalance = require('../api/getBalance');
+const getCurrentBlockNumber = require('../api/getCurrentBlockNumber');
 
-router.get('/test', async (req, res) => {
+router.get('/getCurrentBlockNumber', async (req, res) => {
   try {
-    //paste your test code
-    res.json({ message: 'test' });
+    res.json(await getCurrentBlockNumber());
   } catch (e) {
     res.status(500).json({
-      message: 'Что-то пошло не так, попробуйте снова',
+      message: e,
     });
   }
 });
 
-router.post('/getPrice', async (req, res) => {
-  function getCountWithDecimals(count, decimal){
-    const trueAmount = (count + '000000000000000000').slice(0, decimal+1);
-    return trueAmount;
-  }
-
-  try {
-    function getCountWithDecimals(count, decimal){
-      const trueAmount = (count + '000000000000000000').slice(0, decimal);
-      return trueAmount;
+router.get('/getExactTokenLiquidityTransactions', async (req, res) => {
+  if(req.query.tokenAddress){
+    try {
+      res.json(await getExactTokenLiquidityTransactions(req.query.tokenAddress));
+    } catch (e) {
+      res.status(500).json({
+        message: e,
+      });
     }
-
-    const chainId = UNISWAP.ChainId.MAINNET;
-
-    const tokenAAddress = ETHERS.ethers.utils.getAddress(req.query.tokenA);
-    const tokenA = await UNISWAP.Fetcher.fetchTokenData(chainId, tokenAAddress);
-
-    const tokenBAddress = ETHERS.ethers.utils.getAddress(req.query.tokenB);
-    const tokenB = await UNISWAP.Fetcher.fetchTokenData(chainId, tokenBAddress);
-
-    const pair = await UNISWAP.Fetcher.fetchPairData(tokenA, tokenB);
-    
-    const route = new UNISWAP.Route([pair], tokenA);
-    const amountIn = getCountWithDecimals(req.query.count || 1, tokenA.decimals);
-
-    const trade = new UNISWAP.Trade(route, new UNISWAP.TokenAmount(tokenA, amountIn), UNISWAP.TradeType.EXACT_INPUT);
-
-    res.json({ tokenA, tokenB, midPrice: `${route.midPrice.toSignificant(6)}`, executionPrice: trade.executionPrice.toSignificant(6) });
-  } catch (e) {
+  } else {
     res.status(500).json({
-      message: e.message,
+      message: 'Add token address to request'
     });
   }
-})
+});
+
+router.get('/getPairLiquidity', async (req, res) => {
+  if(req.query.tokenAddress){
+    try {
+      res.json(await getPairLiquidity(req.query.tokenAddress));
+    } catch (e) {
+      res.status(500).json({
+        message: e,
+      });
+    }
+  } else {
+    res.status(500).json({
+      message: 'Add token address to request'
+    });
+  }
+});
+
+router.get('/getLiquidityTransactions', async (req, res) => {
+  try {
+    res.json(await getLiquidityTransactions(req.query.blockNumber));
+  } catch (e) {
+    res.status(500).json({
+      message: e,
+    });
+  }
+});
+
+router.get('/getBalance', async (req, res) => {
+  if(req.query.walletAddress){
+    try {
+      res.json(await getBalance(req.query.walletAddress));
+    } catch (e) {
+      res.status(500).json({
+        message: e,
+      });
+    }
+  } else {
+    res.status(500).json({
+      message: 'Add wallet address to request'
+    });
+  }
+});
+
+router.get('/getTrade', async (req, res) => {
+  if(req.query.tokenAddress && req.query.count){
+    try {
+      res.json(await getTrade(req.query.tokenAddress, req.query.count));
+    } catch (e) {
+      res.status(500).json({
+        message: e.message,
+      });
+    }
+  } else {
+    res.status(500).json({
+      message: 'Add token address and ETH count to request'
+    });
+  }
+});
+
+router.get('/getTransaction', async (req, res) => {
+  if(req.query.tokenAddress && req.query.count && req.query.slippage && req.query.deadline){
+    try {
+      res.json(await initTransaction(req.query.tokenAddress, req.query.count, req.query.slippage, req.query.deadline))
+    } catch (e) {
+      console.log(e);
+      res.status(500).json({
+        message: e.message,
+      });
+    }
+  } else {
+    res.status(500).json({
+      message: 'Add token address, ETH count, slippage in percents and deadline in minutes to request'
+    });
+  }
+});
 
 module.exports = router;
