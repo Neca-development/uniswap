@@ -13,8 +13,7 @@ async function getTrade(inputTokenB, count){
   const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
   
   const route = new Route([pair], WETH[chainId]);
-
-  const amountIn = getCountWithDecimals(count || 1, WETH[chainId].decimals);
+  const amountIn = getCountWithDecimals(+count || 1, WETH[chainId].decimals);
 
   const trade = new Trade(route, new TokenAmount(WETH[chainId], amountIn), TradeType.EXACT_INPUT);
 

@@ -1,10 +1,10 @@
 function getCountWithDecimals(count, decimal){
-  const trueAmount = (count + '000000000000000000').slice(0, decimal+1);
-  return trueAmount;
+  const trueAmount = count * 10 ** decimal;
+  return ''+trueAmount;
 }
 
-function getIntFromPercent(percent){
+function getBipsFromPercent(percent){
   return percent * 10;
 }
 
-module.exports = [getCountWithDecimals, getIntFromPercent];
+module.exports = [getCountWithDecimals, getBipsFromPercent];

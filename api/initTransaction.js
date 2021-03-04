@@ -2,7 +2,7 @@ const { Percent } = require('@uniswap/sdk');
 const { ethers } = require('ethers');
 const Web3 = require('web3');
 
-const [ getIntFromPercent ] = require('../utils');
+const [ getBipsFromPercent ] = require('../utils');
 const getTrade = require('./getTrade');
 
 async function initTransaction(inputTokenB, inputCount, inputSlippage, inputDeadline){
@@ -13,7 +13,7 @@ async function initTransaction(inputTokenB, inputCount, inputSlippage, inputDead
   const { tokenA, tokenB, trade } = await getTrade(inputTokenB, inputCount);
 
   // TRANSACTION VALUES
-  const slippageTolerance = new Percent(getIntFromPercent(inputSlippage).toString(), '1000');
+  const slippageTolerance = new Percent(getBipsFromPercent(+inputSlippage).toString(), '1000'); //(делимое, делитель)
 
   const amountOutMin = web3.utils.numberToHex(trade.minimumAmountOut(slippageTolerance).raw.toString());
   const path = [tokenA.address, tokenB.address];
