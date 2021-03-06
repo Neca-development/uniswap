@@ -1,6 +1,7 @@
+import { ProvidersService } from './services/providers.service';
+import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
-import { ApiService } from './services/api.service';
 
 @Component({
   selector: 'app-root',
@@ -27,22 +28,21 @@ export class AppComponent implements OnInit {
       weth: '0',
       tokenX: '0'
     },
-    currentBlock: '1234567',
+    currentBlock: 0,
     status: 'waiting for liquidity'
   }
 
   settings;
 
-  constructor(private settingsService: SettingsService, private apiService: ApiService){}
+  constructor(private settingsService: SettingsService, private tradingService: TradingService, private providersService: ProvidersService){}
 
   ngOnInit(): void {
     this.updateSettings();
+    // this.providersService.setProvider();
 
     setInterval(async () => {
-      this.data.currentBlock = await this.apiService.get('/api/getCurrentBlockNumber');
-      if(this.settings.address){
-        this.data.balance.eth = await this.apiService.get('/api/getBalance', {walletAddress: this.settings.address});
-      }
+      // this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
+
     }, 2000)
   }
 
@@ -50,7 +50,7 @@ export class AppComponent implements OnInit {
     this.swap[field] = target.value;
 
     if(field == 'tokenAddress'){
-      this.getLiquidity(target.value);
+      this.tradingService.getPairLiquidity(target.value);
     }
   }
 
@@ -58,41 +58,8 @@ export class AppComponent implements OnInit {
     this.swap.gasVariant = value == 'default'? false : true;
   }
 
-  async getAddress(){
-    if(this.settings.privateKey){
-      this.settingsService.setAddress(await this.apiService.get('/api/getAddressFromPrivateKey', {privateKey: this.settings.privateKey}));
-    }
-  }
-
-  async getLiquidity(address){
-    if(address){
-      const liquidity = await this.apiService.get('/api/getPairLiquidity', {tokenAddress: address});
-      const { weth, tokenX } = liquidity;
-      this.data.liquidity = { weth, tokenX };
-    }
-  }
-
   updateSettings(){
     this.settings = this.settingsService.getSettings();
-    this.getAddress();
-  }
-
-  async initTransaction(){
-    if(this.swap.tokenAddress && this.swap.tokenAmount && this.settings.address && this.settings.privateKey){
-      this.swap.active = true;
-
-      const params = {
-        tokenAddress: this.swap.tokenAddress,
-        count: this.swap.tokenAmount,
-        walletAddress: this.settings.address,
-        privateKey: this.settings.privateKey,
-      };
-
-      const receipt = await this.apiService.get('/api/getTransaction', params);
-
-      this.swap.active = false;
-    } else {
-      //TODO: add alert
-    }
+    this.settings.address = this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
   }
 }

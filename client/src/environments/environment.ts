@@ -5,6 +5,13 @@
 export const environment = {
   production: false,
   serverUrl: 'http://localhost:3000',
+  ETHERSCAN_API_KEY:'FXVRPEREHVW4DQPCXRS6ZB84Q6DXBRYGP9',
+  INFURA_PROJECT_ID:'b701310dbaa544e787aeead2e1535bdb',
+  INFURA_PROJECT_SECRET: '34a09fd3618043b4a2d90123dfda0e4b',
+  ALCHEMY_API_KEY: 'kOaJQ97oz3O7LfB8eUKuivmRgyhUIhSy',
+  INFURA_WSS_MAINNET: 'wss://mainnet.infura.io/ws/v3/b701310dbaa544e787aeead2e1535bdb',
+  INFURA_WSS_ROPSTEN: 'wss://ropsten.infura.io/ws/v3/b701310dbaa544e787aeead2e1535bdb',
+  ROUTER_ADDRESS: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
 };
 
 /*
