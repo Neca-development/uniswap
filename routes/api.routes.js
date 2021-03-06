@@ -8,13 +8,24 @@ const getLiquidityTransactions = require('../api/getLiquidityTransactions');
 const getPairLiquidity = require('../api/getPairLiquidity');
 const getBalance = require('../api/getBalance');
 const getCurrentBlockNumber = require('../api/getCurrentBlockNumber');
+const getAddressFromPrivateKey = require('../api/getAddressFromPrivateKey');
+
+router.get('/getAddressFromPrivateKey', async (req, res) => {
+  try {
+    res.json({data: await getAddressFromPrivateKey(req.query.privateKey)});
+  } catch (e) {
+    res.status(500).json({
+      error: e,
+    });
+  }
+});
 
 router.get('/getCurrentBlockNumber', async (req, res) => {
   try {
-    res.json(await getCurrentBlockNumber());
+    res.json({data: await getCurrentBlockNumber()});
   } catch (e) {
     res.status(500).json({
-      message: e,
+      error: e,
     });
   }
 });
@@ -22,15 +33,15 @@ router.get('/getCurrentBlockNumber', async (req, res) => {
 router.get('/getExactTokenLiquidityTransactions', async (req, res) => {
   if(req.query.tokenAddress){
     try {
-      res.json(await getExactTokenLiquidityTransactions(req.query.tokenAddress));
+      res.json({data: await getExactTokenLiquidityTransactions(req.query.tokenAddress)});
     } catch (e) {
       res.status(500).json({
-        message: e,
+        error: e,
       });
     }
   } else {
     res.status(400).json({
-      message: 'Add token address to request'
+      error: 'Add token address to request'
     });
   }
 });
@@ -38,25 +49,25 @@ router.get('/getExactTokenLiquidityTransactions', async (req, res) => {
 router.get('/getPairLiquidity', async (req, res) => {
   if(req.query.tokenAddress){
     try {
-      res.json(await getPairLiquidity(req.query.tokenAddress));
+      res.json({data: await getPairLiquidity(req.query.tokenAddress)});
     } catch (e) {
       res.status(500).json({
-        message: e,
+        error: e,
       });
     }
   } else {
     res.status(400).json({
-      message: 'Add token address to request'
+      error: 'Add token address to request'
     });
   }
 });
 
 router.get('/getLiquidityTransactions', async (req, res) => {
   try {
-    res.json(await getLiquidityTransactions(req.query.blockNumber));
+    res.json({data: await getLiquidityTransactions(req.query.blockNumber)});
   } catch (e) {
     res.status(500).json({
-      message: e,
+      error: e,
     });
   }
 });
@@ -64,15 +75,15 @@ router.get('/getLiquidityTransactions', async (req, res) => {
 router.get('/getBalance', async (req, res) => {
   if(req.query.walletAddress){
     try {
-      res.json(await getBalance(req.query.walletAddress));
+      res.json({data: await getBalance(req.query.walletAddress)});
     } catch (e) {
       res.status(500).json({
-        message: e,
+        error: e,
       });
     }
   } else {
     res.status(400).json({
-      message: 'Add wallet address to request'
+      error: 'Add wallet address to request'
     });
   }
 });
@@ -80,32 +91,41 @@ router.get('/getBalance', async (req, res) => {
 router.get('/getTrade', async (req, res) => {
   if(req.query.tokenAddress && req.query.count){
     try {
-      res.json(await getTrade(req.query.tokenAddress, req.query.count));
+      res.json({data: await getTrade(req.query.tokenAddress, req.query.count)});
     } catch (e) {
       res.status(500).json({
-        message: e.message,
+        error: e.message,
       });
     }
   } else {
     res.status(400).json({
-      message: 'Add token address and ETH count to request'
+      error: 'Add token address and ETH count to request'
     });
   }
 });
 
 router.get('/getTransaction', async (req, res) => {
-  if(req.query.tokenAddress && req.query.count && req.query.slippage && req.query.deadline){
+  const {
+    tokenAddress,
+    count,
+    slippage,
+    deadline,
+    walletAddress,
+    privateKey
+  } = req.query;
+
+  if(tokenAddress && count && walletAddress && privateKey){
     try {
-      res.json(await initTransaction(req.query.tokenAddress, req.query.count, req.query.slippage, req.query.deadline))
+      res.json({data: await initTransaction(tokenAddress, count, walletAddress, privateKey, slippage, deadline)})
     } catch (e) {
       console.log(e);
       res.status(500).json({
-        message: e.message,
+        error: e.message,
       });
     }
   } else {
     res.status(400).json({
-      message: 'Add token address, ETH count, slippage in percents and deadline in minutes to request'
+      error: 'Add token address, ETH count, slippage in percents and deadline in minutes to request'
     });
   }
 });

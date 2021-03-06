@@ -1,5 +1,4 @@
-// SHOWS COUNTER OF LIQUIDITY TRANSACTIONS 
-
+// SHOWS COUNTER OF LIQUIDITY TRANSACTIONS
 const getExactTokenLiquidityTransactions = require('./api/getExactTokenLiquidityTransactions');
 
 let store = new Set();

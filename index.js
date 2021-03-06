@@ -1,27 +1,85 @@
 require('dotenv').config();
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
-const app = express();
+const path = require('path');
+const http = require('http');
+const hostServer = express();
+const electron = require('electron');
+const { app, BrowserWindow } = electron;
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json({ extended: true }));
-app.use('/api', require('./routes/api.routes'));
+const allowCrossDomain = function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
 
-app.get('*', (req, res) => {
-  res.json({message: 'nothing to view'});
+  // intercept OPTIONS method
+  if ('OPTIONS' == req.method) {
+    res.send(200);
+  }
+  else {
+    next();
+  }
+};
+
+// Parsers
+hostServer.use(bodyParser.urlencoded({extended: false}));
+hostServer.use(bodyParser.json());
+hostServer.use(allowCrossDomain);
+
+// Angular DIST output folder
+hostServer.use(express.static(path.join(__dirname, 'client/dist/client')));
+
+hostServer.use(cors());
+hostServer.use(express.json({ extended: true }));
+hostServer.use('/api', require('./routes/api.routes'));
+
+hostServer.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist/client/index.html'));
 });
 
-async function start() {
-  try {
-    app.listen(PORT, () => console.log(`Started on ${PORT}`));
-  } catch (e) {
-    console.log('Error', e.message);
-    process.exit(1);
-  }
+// LOCAL SERVER
+// async function start() {
+//   try {
+//     hostServer.listen(PORT, () => console.log(`Started on ${PORT}`));
+//   } catch (e) {
+//     console.log('Error', e.message);
+//     process.exit(1);
+//   }
+// }
+
+// start();
+
+// // require('./test.js');
+
+
+// ELECTRON APP
+let mainWindow;
+
+function createWindow () {
+
+    // const server = http.createServer(hostServer);
+    hostServer.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
+
+    //Create the browser window
+    mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
+
+
+    mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
+
+    // mainWindow.webContents.openDevTools();
+
+    mainWindow.on('close', function() {
+        mainWindow = null;
+    });
 }
 
-start();
+app.on('ready', createWindow);
+app.on('window-all-closed', function() {
+  if (process.platform !== 'darwin') {
+      app.quit();
+  }
+});
 
-require('./test.js');
