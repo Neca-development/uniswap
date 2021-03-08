@@ -13,6 +13,7 @@ export class AppComponent implements OnInit {
 
   swap = {
     tokenAddress: '',
+    isTokenValid: false,
     tokenAmount: '1',
     gasVariant: false,
     gasPrice: '',
@@ -25,8 +26,9 @@ export class AppComponent implements OnInit {
       tokenX: '0'
     },
     liquidity: {
-      weth: '0',
-      tokenX: '0'
+      loading: false,
+      weth: 0,
+      tokenX: 0
     },
     currentBlock: 0,
     status: 'waiting for liquidity'
@@ -37,29 +39,73 @@ export class AppComponent implements OnInit {
   constructor(private settingsService: SettingsService, private tradingService: TradingService, private providersService: ProvidersService){}
 
   ngOnInit(): void {
+    this.providersService.setProvider();
     this.updateSettings();
-    // this.providersService.setProvider();
 
     setInterval(async () => {
-      // this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
+      this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
 
+      if(this.settings.address){
+        this.data.balance.eth = await this.tradingService.getBalance(this.settings.address);
+      }
     }, 2000)
+
+    setInterval(async() => {
+      await this.tradingService.getLiquidityTransactions();
+    }, 5000)
+
   }
 
-  changeHandler(field, { target }){
+  async changeHandler(field, { target }){
     this.swap[field] = target.value;
 
     if(field == 'tokenAddress'){
-      this.tradingService.getPairLiquidity(target.value);
+      this.data.liquidity.loading = true;
+      const response = await this.tradingService.getPairLiquidity(target.value);
+      const { error, weth, tokenX } = response;
+
+      if(error){
+        console.log('Invalid token');
+        //TODO: add error boundary
+      }
+
+      this.data.liquidity = { loading: false,  weth, tokenX };
     }
   }
 
-  changeGasTypeHandler({value}){
+  async changeGasTypeHandler({value}){
     this.swap.gasVariant = value == 'default'? false : true;
   }
 
-  updateSettings(){
+  async updateSettings(){
     this.settings = this.settingsService.getSettings();
-    this.settings.address = this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
+
+    if(this.settings.privateKey){
+      this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
+    }
+  }
+
+  async submitSwap(){
+    if(this.settings.address){
+      this.swap.active = true;
+      this.data.status = "Waiting for liquidity to be added";
+      const interval = setInterval(async () => {
+       const txs = await this.tradingService.getLiquidityTransactions();
+       console.log(txs);
+
+
+       if(txs.length){
+        this.data.status = `Swap executed in block ${this.data.currentBlock}`;
+        // await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
+        // this.data.status = 'Swap correctly mained';
+        clearInterval(interval);
+       }
+      }, 100);
+      // this.swap.active = false;
+    } else {
+      console.log('enter private key');
+
+      //TODO: add error boundary
+    }
   }
 }

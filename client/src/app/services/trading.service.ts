@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { Fetcher, ChainId, WETH, Route, Trade, TokenAmount, Percent, TradeType  } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
-// import InputDataDecoder from 'ethereum-input-data-decoder';
-// const decoder = new InputDataDecoder('../../assets/abi.json');
+import decoder from '../../assets/abi-decoder';
+import { abi } from '../../assets/abi';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +25,11 @@ export class TradingService {
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
     return ''+trueAmount;
+  }
+
+  async getGasPrice(){
+    const gasPrice = await this.provider.getGasPrice();
+    return gasPrice;
   }
 
   async getAddressFromPrivateKey(privateKey){
@@ -56,48 +61,80 @@ export class TradingService {
   }
 
 
-// async getLiquidityTransactions(blockNumber = 'pending') {
-//   const web3 = this.providersService.getProvider();
+async getLiquidityTransactions(blockNumber = 'pending') {
+  const web3 = this.providersService.getProvider();
 
-//   const blockInfo = await web3.eth.getBlock(blockNumber, true);
-//   const transactionsToRouter = blockInfo.transactions.filter((tx) => tx.to == process.env.ROUTER_ADDRESS);
+  let blockInfo;
+  try {
+    blockInfo = await web3.eth.getBlock(blockNumber, true);
+  } catch (error) {
+    return;
+  }
 
-//   const addLiquidityTransactions = transactionsToRouter.filter((tx) => {
-//     const decodedData = decoder.decodeData(tx.input);
 
-//     if (decodedData.method == 'addLiquidityETH'){
-//       return true;
-//     }
-//   });
+  const transactionsToRouter = blockInfo.transactions.filter((tx) => tx.to == environment.ROUTER_ADDRESS);
+  console.log(transactionsToRouter, web3.utils.hexToAscii(transactionsToRouter[0].input));
 
-//   const output = addLiquidityTransactions.map((tx) => {
-//     const decodedData = decoder.decodeData(tx.input);
+  const addLiquidityTransactions = transactionsToRouter.filter((tx) => {
+    console.log('add');
+    const decodedData = web3.eth.abi.decodeParameters(abi, tx.input);
 
-//     return {
-//       hash: tx.hash,
-//       token: '0x' + decodedData.inputs[0]
-//     }
-//   })
+    if (decodedData.method == 'addLiquidityETH'){
+      return true;
+    }
+  });
 
-//   return output;
-// }
+  const output = addLiquidityTransactions.map((tx) => {
+    console.log('output');
 
-  // async getExactTokenLiquidityTransactions(tokenAddress) {
-  //   const liquidityTransactions = await this.getLiquidityTransactions();
+    const decodedData = web3.eth.abi.decodeParameters(abi, tx.input);
+    console.log('output');
 
-  //   const filteredByToken = liquidityTransactions.filter((tx) => tx.token == tokenAddress);
+    return {
+      hash: tx.hash,
+      token: '0x' + decodedData.inputs[0]
+    }
+  })
 
-  //   return filteredByToken;
-  // }
+  return output;
+}
 
+  async getExactTokenLiquidityTransactions(tokenAddress) {
+    const liquidityTransactions = await this.getLiquidityTransactions();
+
+    const filteredByToken = liquidityTransactions.filter((tx) => tx.token == tokenAddress);
+
+    return filteredByToken;
+  }
+
+  async getToken(tokenAddress){
+    const web3 = this.providersService.getProvider();
+    const chainId = ChainId.ROPSTEN;
+
+    try {
+      const tokenChecksummedAddress = web3.utils.toChecksumAddress(tokenAddress);
+      const tokenB = await Fetcher.fetchTokenData(chainId, tokenChecksummedAddress);
+      return tokenB
+    } catch (error) {
+      return false
+    }
+  }
 
   // TODO: fix chain id
   async getPairLiquidity (tokenAddress){
     const web3 = this.providersService.getProvider();
     const chainId = ChainId.ROPSTEN;
 
-    const tokenChecksummedAddress = web3.utils.toChecksumAddress(tokenAddress);
-    const tokenB = await Fetcher.fetchTokenData(chainId, tokenChecksummedAddress);
+    const tokenB = await this.getToken(tokenAddress);
+
+    if(!tokenB){
+      return {
+        error: true,
+        weth: 0,
+        tokenX: 0
+      };
+    }
+
     const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
 
     const tokenABI: any = [
@@ -117,28 +154,18 @@ export class TradingService {
       },
     ];
 
-    async function getTokenAmountByAddress(tokenAddress){
+    async function getTokenAmountByAddress(tokenAddress, token = WETH[chainId]){
       const contract = new web3.eth.Contract(tokenABI, tokenAddress);
       const balance = await contract.methods.balanceOf(pair.liquidityToken.address).call();
-      const decimals = getDecimals(tokenAddress);
+      const {decimals} = token;
       return balance/10**decimals;
     }
 
-    function getDecimals(tokenAddress){
-      if(tokenAddress != WETH[chainId].address){
-        const { decimals } = tokenB;
-        return decimals;
-      }
-
-      return WETH[chainId].decimals;
-    }
-
     return {
+      error: false,
       pairAddress: pair.liquidityToken.address,
-      wethAddress: WETH[chainId].address,
-      tokenXAddress: tokenChecksummedAddress,
       weth: await getTokenAmountByAddress(WETH[chainId].address),
-      tokenX: await getTokenAmountByAddress(tokenAddress)
+      tokenX: await getTokenAmountByAddress(tokenAddress, tokenB)
     }
   }
 
@@ -182,7 +209,7 @@ export class TradingService {
     const gasPrice = web3.utils.numberToHex((await this.provider.getGasPrice()).toString());
 
     // CONTRACT INIT (we may add other contracts)
-    const uniswap = new ethers.Contract(process.env.ROUTER_ADDRESS, [
+    const uniswap = new ethers.Contract(environment.ROUTER_ADDRESS, [
       'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'
     ], account);
 

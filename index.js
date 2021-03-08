@@ -34,7 +34,6 @@ hostServer.use(express.static(path.join(__dirname, 'client/dist/client')));
 
 hostServer.use(cors());
 hostServer.use(express.json({ extended: true }));
-hostServer.use('/api', require('./routes/api.routes'));
 
 hostServer.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/dist/client/index.html'));
@@ -60,7 +59,7 @@ let mainWindow;
 
 function createWindow () {
 
-    // const server = http.createServer(hostServer);
+    const server = http.createServer(hostServer);
     hostServer.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
 
     //Create the browser window
