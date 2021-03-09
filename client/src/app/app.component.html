@@ -1,5 +1,5 @@
 <div class="main-container">
-  <app-header (changeSettings)="updateSettings()"></app-header>
+  <app-header (changeSettings)="updateComponent()"></app-header>
 
   <div class="content">
 
@@ -19,7 +19,7 @@
         <p>tokenX - ETH</p>
         <p *ngIf="!data.liquidity.loading">
           Liquidity: <br>
-          {{data.liquidity.tokenX}} tokenX <br>
+          {{data.liquidity.tokenX}} {{swap.tokenSymbol}} <br>
           {{data.liquidity.weth}} ETH
         </p>
         <p *ngIf="data.liquidity.loading">Loading liqudity data...</p>
@@ -30,7 +30,7 @@
       <h2>Wallet balance</h2>
       <ul *ngIf="settings.privateKey">
         <li>{{data.balance.eth}} ETH</li>
-        <li *ngIf="data.balance.tokenX > 0">{{data.balance.tokenX}} tokenX</li>
+        <li *ngIf="data.balance.tokenX > 0">{{data.balance.tokenX}} {{swap.tokenSymbol}}</li>
         <li *ngIf="!data.balance.tokenX">Enter token address to get balance of tokenX</li>
       </ul>
       <p *ngIf="!settings.privateKey">Enter private key in settings</p>

@@ -52,9 +52,10 @@ export class SettingsDialogComponent implements OnInit {
   async saveClick(){
     if(this.settings.network.nodeAddress){
       this.settings.network.chainId = await this.providerService.getChainId(this.settings.network.nodeAddress);
-      console.log(this.settings.network.chainId);
 
       if(this.settings.network.chainId){
+        const { name } = this.networks.find((net) => net.value == this.settings.network.chainId);
+        this.settings.network.name = name || 'unknown network';
         this.settingsService.setSettings(this.settings);
       } else {
         console.log('Invalid node address');

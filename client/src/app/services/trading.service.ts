@@ -49,28 +49,13 @@ export class TradingService {
   async getTokenXBalance(tokenAddress, walletAddress){
     const web3 = this.providersService.getProvider();
 
-    const tokenABI = [
-      {
-        "constant":true,
-        "inputs":[{"name":"_owner","type":"address"}],
-        "name":"balanceOf",
-        "outputs":[{"name":"balance","type":"uint256"}],
-        "type":"function"
-      },
-      {
-        "constant":true,
-        "inputs":[],
-        "name":"decimals",
-        "outputs":[{"name":"","type":"uint8"}],
-        "type":"function"
-      },
-    ];
-
+    const tokenABI = require('../../assets/abi-token.json');
 
     const contract = new web3.eth.Contract(tokenABI, tokenAddress);
     const balance = await contract.methods.balanceOf(walletAddress).call();
-    const decimals = contract.methods.decimals();
-    return balance/10**18; // TODO: Fix getDecimals
+    const decimals = await contract.methods.decimals().call();
+
+    return balance/10**decimals;
   }
 
   async getCurrentBlockNumber(){
@@ -164,27 +149,12 @@ async getLiquidityTransactions(blockNumber = 'pending') {
 
     const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
 
-    const tokenABI = [
-      {
-        "constant":true,
-        "inputs":[{"name":"_owner","type":"address"}],
-        "name":"balanceOf",
-        "outputs":[{"name":"balance","type":"uint256"}],
-        "type":"function"
-      },
-      {
-        "constant":true,
-        "inputs":[],
-        "name":"decimals",
-        "outputs":[{"name":"","type":"uint8"}],
-        "type":"function"
-      },
-    ];
+    const tokenABI = require('../../assets/abi-token.json');
 
     async function getTokenAmountByAddress(tokenAddress, token = WETH[chainId]){
       const contract = new web3.eth.Contract(tokenABI, tokenAddress);
       const balance = await contract.methods.balanceOf(pair.liquidityToken.address).call();
-      const {decimals} = token;
+      const decimals = await contract.methods.decimals().call();
       return balance/10**decimals;
     }
 
@@ -192,7 +162,7 @@ async getLiquidityTransactions(blockNumber = 'pending') {
       error: false,
       pairAddress: pair.liquidityToken.address,
       weth: await getTokenAmountByAddress(WETH[chainId].address),
-      tokenX: await getTokenAmountByAddress(tokenAddress, tokenB)
+      tokenX: await getTokenAmountByAddress(tokenAddress, tokenB),
     }
   }
 
@@ -216,7 +186,7 @@ async getLiquidityTransactions(blockNumber = 'pending') {
   async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, inputSlippage = 0.5, inputDeadline = 20){
     const web3 = this.providersService.getProvider();
 
-    const signer = new ethers.Wallet(privateKey);
+    const signer = new ethers.Wallet(privateKey, this.provider);
     const account = signer.connect(this.provider);
 
 
@@ -233,7 +203,7 @@ async getLiquidityTransactions(blockNumber = 'pending') {
     const value = web3.utils.numberToHex(trade.inputAmount.raw.toString());
 
     const gasLimit = web3.utils.numberToHex('300000');
-    const gasPrice = web3.utils.numberToHex((await this.provider.getGasPrice()).toString());
+    const gasPrice = web3.utils.numberToHex((await web3.eth.getGasPrice()).toString());
 
     // CONTRACT INIT (we may add other contracts)
     const uniswap = new ethers.Contract(environment.ROUTER_ADDRESS, [

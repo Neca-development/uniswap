@@ -11,16 +11,17 @@ import { SettingsService } from './services/settings.service';
 export class AppComponent implements OnInit {
   title = 'client';
 
-  swap = {
+  swapInitValues = {
     tokenAddress: '',
+    tokenSymbol: 'tokenX',
     isTokenValid: false,
     tokenAmount: '1',
     gasVariant: false,
     gasPrice: '',
-    active: false
+    active: false,
   }
 
-  data = {
+  dataInitValues = {
     balance: {
       eth: '0',
       tokenX: 0
@@ -34,12 +35,14 @@ export class AppComponent implements OnInit {
     status: 'waiting for liquidity'
   }
 
+  swap;
+  data;
   settings;
 
   constructor(private settingsService: SettingsService, private tradingService: TradingService, private providersService: ProvidersService){}
 
   ngOnInit(): void {
-    this.updateSettings();
+    this.updateComponent();
 
     setInterval(async () => {
       this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
@@ -81,7 +84,11 @@ export class AppComponent implements OnInit {
     this.swap.gasVariant = value == 'default'? false : true;
   }
 
-  async updateSettings(){
+  async updateComponent(){
+    console.log('update');
+
+    this.swap = this.swapInitValues;
+    this.data = this.dataInitValues;
     this.settings = this.settingsService.getSettings();
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
@@ -94,17 +101,9 @@ export class AppComponent implements OnInit {
     if(this.settings.address){
       this.swap.active = true;
       this.data.status = "Waiting for liquidity to be added";
-      const interval = setInterval(async () => {
-        this.data.status = 'Liquidity tx in the pending block';
-        //  const txs = await this.tradingService.getLiquidityTransactions();
-        //  console.log(txs);
-
-       if(true){
-        await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
-        this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
-       }
-       clearInterval(interval);
-      }, 100);
+      this.data.status = 'Liquidity tx in the pending block';
+      await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
+      this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
       // this.swap.active = false;
     } else {
       console.log('enter private key');
