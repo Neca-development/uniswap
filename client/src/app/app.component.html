@@ -30,7 +30,8 @@
       <h2>Wallet balance</h2>
       <ul *ngIf="settings.privateKey">
         <li>{{data.balance.eth}} ETH</li>
-        <li>{{data.balance.tokenX}} tokenX</li>
+        <li *ngIf="data.balance.tokenX > 0">{{data.balance.tokenX}} tokenX</li>
+        <li *ngIf="!data.balance.tokenX">Enter token address to get balance of tokenX</li>
       </ul>
       <p *ngIf="!settings.privateKey">Enter private key in settings</p>
     </div>
@@ -89,7 +90,7 @@
       <ul>
         <li>Swap status: {{swap.active && data.status ? data.status : 'Submit swap'}}</li>
         <li>Block №: {{data.currentBlock}}</li>
-        <li>Network status: {{settings.network}}</li>
+        <li>Network status: {{settings.network.name}}</li>
       </ul>
     </div>
 

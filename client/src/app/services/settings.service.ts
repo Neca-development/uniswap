@@ -8,8 +8,12 @@ import { ISettings } from './../models/model';
 export class SettingsService {
   _settingsStorage: ISettings = {
     privateKey: '',
-    network: "ropsten",
-    address: ''
+    network: {
+      chainId: 3,
+      nodeAddress: '',
+      name: "ROPSTEN"
+    },
+    address: '',
   }
 
   getSettings(){

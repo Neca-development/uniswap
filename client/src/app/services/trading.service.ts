@@ -46,6 +46,33 @@ export class TradingService {
     return web3.utils.fromWei(amount, 'ether');
   }
 
+  async getTokenXBalance(tokenAddress, walletAddress){
+    const web3 = this.providersService.getProvider();
+
+    const tokenABI = [
+      {
+        "constant":true,
+        "inputs":[{"name":"_owner","type":"address"}],
+        "name":"balanceOf",
+        "outputs":[{"name":"balance","type":"uint256"}],
+        "type":"function"
+      },
+      {
+        "constant":true,
+        "inputs":[],
+        "name":"decimals",
+        "outputs":[{"name":"","type":"uint8"}],
+        "type":"function"
+      },
+    ];
+
+
+    const contract = new web3.eth.Contract(tokenABI, tokenAddress);
+    const balance = await contract.methods.balanceOf(walletAddress).call();
+    const decimals = contract.methods.decimals();
+    return balance/10**18; // TODO: Fix getDecimals
+  }
+
   async getCurrentBlockNumber(){
     const web3 = this.providersService.getProvider();
     const blockInfo = await web3.eth.getBlock('latest');
@@ -137,7 +164,7 @@ async getLiquidityTransactions(blockNumber = 'pending') {
 
     const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
 
-    const tokenABI: any = [
+    const tokenABI = [
       {
         "constant":true,
         "inputs":[{"name":"_owner","type":"address"}],

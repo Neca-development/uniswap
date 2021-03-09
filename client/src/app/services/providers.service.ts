@@ -15,7 +15,17 @@ export class ProvidersService {
 
   //TODO: add network switcher
   async setProvider(network?){
-    const web3 = new Web3(environment.INFURA_WSS_ROPSTEN);  
-    this.web3 = web3;    
+    const web3 = new Web3(network? network : environment.INFURA_WSS_ROPSTEN);
+    this.web3 = web3;
+  }
+
+  async getChainId(network){
+    try {
+      const web3 = new Web3(network);
+      const chainId = await web3.eth.getChainId();
+      return chainId;
+    } catch (error) {
+      return false;
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { ProvidersService } from './../services/providers.service';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { SettingsService } from './../services/settings.service';
@@ -29,7 +30,12 @@ export class HeaderComponent{
 export class SettingsDialogComponent implements OnInit {
   settings;
 
-  constructor(private settingsService: SettingsService){}
+  networks = [
+    {value: 1, name: 'MAINNET'},
+    {value: 3, name: 'ROPSTEN'}
+  ]
+
+  constructor(private settingsService: SettingsService, private providerService: ProvidersService){}
 
   ngOnInit(){
     this.settings = this.settingsService.getSettings();
@@ -39,7 +45,26 @@ export class SettingsDialogComponent implements OnInit {
     this.settings[field] = target.value;
   }
 
-  saveClick(){
-    this.settingsService.setSettings(this.settings);
+  changeNetworkHandler({ target }){
+    this.settings.network.nodeAddress = target.value;
+  }
+
+  async saveClick(){
+    if(this.settings.network.nodeAddress){
+      this.settings.network.chainId = await this.providerService.getChainId(this.settings.network.nodeAddress);
+      console.log(this.settings.network.chainId);
+
+      if(this.settings.network.chainId){
+        this.settingsService.setSettings(this.settings);
+      } else {
+        console.log('Invalid node address');
+        // TODO: add eror boundary
+      }
+    }
+
+    if(this.settings.privateKey){
+      this.settingsService.setSettings(this.settings);
+    }
+
   }
 }
