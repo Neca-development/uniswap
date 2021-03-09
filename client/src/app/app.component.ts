@@ -2,6 +2,7 @@ import { ProvidersService } from './services/providers.service';
 import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
+import { webSocket } from "rxjs/webSocket";
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,7 @@ import { SettingsService } from './services/settings.service';
 export class AppComponent implements OnInit {
   title = 'client';
 
-  swapInitValues = {
+  swap = {
     tokenAddress: '',
     tokenSymbol: 'tokenX',
     isTokenValid: false,
@@ -19,9 +20,9 @@ export class AppComponent implements OnInit {
     gasVariant: false,
     gasPrice: '',
     active: false,
-  }
+  };
 
-  dataInitValues = {
+  data  = {
     balance: {
       eth: '0',
       tokenX: 0
@@ -33,10 +34,8 @@ export class AppComponent implements OnInit {
     },
     currentBlock: 0,
     status: 'waiting for liquidity'
-  }
+  };
 
-  swap;
-  data;
   settings;
 
   constructor(private settingsService: SettingsService, private tradingService: TradingService, private providersService: ProvidersService){}
@@ -87,8 +86,8 @@ export class AppComponent implements OnInit {
   async updateComponent(){
     console.log('update');
 
-    this.swap = this.swapInitValues;
-    this.data = this.dataInitValues;
+    // this.swap = this.swapInitValues;
+    // this.data = this.dataInitValues;
     this.settings = this.settingsService.getSettings();
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
@@ -98,17 +97,33 @@ export class AppComponent implements OnInit {
   }
 
   async submitSwap(){
-    if(this.settings.address){
-      this.swap.active = true;
-      this.data.status = "Waiting for liquidity to be added";
-      this.data.status = 'Liquidity tx in the pending block';
-      await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
-      this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
-      // this.swap.active = false;
-    } else {
-      console.log('enter private key');
+    const ws = webSocket('ws://localhost:3000');
 
-      //TODO: add error boundary
+    interface IMessage{
+      type: string,
+      value: string
     }
+
+    const observableA = ws.multiplex(
+      () => ({type: 'subscribeLiquidity', tokenAddress: this.swap.tokenAddress, nodeAddress: this.settings.network.nodeAddress}),
+      () => ({}), // ...and when gets this one, it will stop.
+      (message: IMessage) => message.type === 'success' // If the function returns `true` message is passed down the stream. Skipped if the function returns false.
+    );
+
+    const subA = observableA.subscribe(messageForA => console.log(messageForA));
+
+    // if(this.settings.address){
+
+    //   // this.swap.active = true;
+    //   // this.data.status = "Waiting for liquidity to be added";
+    //   // this.data.status = 'Liquidity tx in the pending block';
+    //   // await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
+    //   // this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
+    //   // this.swap.active = false;
+    // } else {
+    //   console.log('enter private key');
+
+    //   //TODO: add error boundary
+    // }
   }
 }

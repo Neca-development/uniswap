@@ -7,6 +7,8 @@ const http = require('http');
 const hostServer = express();
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
+const WebSocket = require("ws");
+const getExactTokenLiquidityTransactions = require('./functions/getExactTokenLiquidityTransactions');
 
 const PORT = process.env.PORT || 5000;
 
@@ -40,45 +42,83 @@ hostServer.get('*', (req, res) => {
 });
 
 // LOCAL SERVER
-// async function start() {
-//   try {
-//     hostServer.listen(PORT, () => console.log(`Started on ${PORT}`));
-//   } catch (e) {
-//     console.log('Error', e.message);
-//     process.exit(1);
-//   }
-// }
+async function start() {
+  try {
+      const server = http.createServer(hostServer);
+      const webSocketServer = new WebSocket.Server({ server });
 
-// start();
+      webSocketServer.on('connection', ws => {
+        ws.on('message', async (m) => {
+          const messageObject = JSON.parse(m);
+          switch (messageObject.type){
+            case "subscribeLiquidity":
+              console.log(m);
+              let interval = setInterval( async () => {
+                getExactTokenLiquidityTransactions(messageObject.tokenAddress, messageObject.nodeAddress).then((value) => {
+                  if(value.length){
+                    console.log('Have one');
+                    ws.send(JSON.stringify({type: 'success', value: value[0].hash}));
+                    clearInterval(interval);
+                  }
+                }); 
+              }, 2000);
+          }
+          webSocketServer.clients.forEach(client => client.send(m));
+        });
+    
+        ws.on("error", e => ws.send(e));
+    
+        ws.send(JSON.stringify('Hi there, I am a WebSocket server'));
+      });
+      server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
+  } catch (e) {
+    console.log('Error', e.message);
+    process.exit(1);
+  }
+}
+
+start();
 
 // // require('./test.js');
 
 
 // ELECTRON APP
-let mainWindow;
+// let mainWindow;
 
-function createWindow () {
+// function createWindow () {
 
-    const server = http.createServer(hostServer);
-    hostServer.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
+//     const server = http.createServer(hostServer);
+//     const webSocketServer = new WebSocket.Server({ server });
 
-    //Create the browser window
-    mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
+//     webSocketServer.on('connection', ws => {
+//       ws.on('message', m => {
+//         webSocketServer.clients.forEach(client => client.send(m));
+//       });
+   
+//       ws.on("error", e => ws.send(e));
+   
+//       ws.send('Hi there, I am a WebSocket server');
+//     });
+
+//     server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
+
+//     //Create the browser window
+//     mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
 
 
-    mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
+//     mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
 
-    // mainWindow.webContents.openDevTools();
+//     // mainWindow.webContents.openDevTools();
 
-    mainWindow.on('close', function() {
-        mainWindow = null;
-    });
-}
+//     mainWindow.on('close', function() {
+//         mainWindow = null;
+//     });
+// }
 
-app.on('ready', createWindow);
-app.on('window-all-closed', function() {
-  if (process.platform !== 'darwin') {
-      app.quit();
-  }
-});
+// app.on('ready', createWindow);
+// app.on('window-all-closed', function() {
+//   if (process.platform !== 'darwin') {
+//       app.quit();
+//   }
+// });
 

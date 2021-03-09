@@ -3,8 +3,7 @@ import { Injectable } from '@angular/core';
 import { Fetcher, ChainId, WETH, Route, Trade, TokenAmount, Percent, TradeType  } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
-import decoder from '../../assets/abi-decoder';
-import { abi } from '../../assets/abi';
+import { SettingsService } from './settings.service';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +19,7 @@ export class TradingService {
     alchemy: environment.ALCHEMY_API_KEY
   });
 
-  constructor(private providersService: ProvidersService){}
+  constructor(private settingsService: SettingsService, private providersService: ProvidersService){}
 
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
@@ -70,53 +69,6 @@ export class TradingService {
     const account = signer.connect(this.provider);
 
     return account;
-  }
-
-
-async getLiquidityTransactions(blockNumber = 'pending') {
-  const web3 = this.providersService.getProvider();
-
-  let blockInfo;
-  try {
-    blockInfo = await web3.eth.getBlock(blockNumber, true);
-  } catch (error) {
-    return;
-  }
-
-
-  const transactionsToRouter = blockInfo.transactions.filter((tx) => tx.to == environment.ROUTER_ADDRESS);
-  console.log(transactionsToRouter, web3.utils.hexToAscii(transactionsToRouter[0].input));
-
-  const addLiquidityTransactions = transactionsToRouter.filter((tx) => {
-    console.log('add');
-    const decodedData = web3.eth.abi.decodeParameters(abi, tx.input);
-
-    if (decodedData.method == 'addLiquidityETH'){
-      return true;
-    }
-  });
-
-  const output = addLiquidityTransactions.map((tx) => {
-    console.log('output');
-
-    const decodedData = web3.eth.abi.decodeParameters(abi, tx.input);
-    console.log('output');
-
-    return {
-      hash: tx.hash,
-      token: '0x' + decodedData.inputs[0]
-    }
-  })
-
-  return output;
-}
-
-  async getExactTokenLiquidityTransactions(tokenAddress) {
-    const liquidityTransactions = await this.getLiquidityTransactions();
-
-    const filteredByToken = liquidityTransactions.filter((tx) => tx.token == tokenAddress);
-
-    return filteredByToken;
   }
 
   async getToken(tokenAddress){
