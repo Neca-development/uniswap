@@ -8,7 +8,7 @@ const hostServer = express();
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
 
-const PORT = process.env.PORT || 5000;
+//const PORT = process.env.PORT || 5000;
 
 const allowCrossDomain = function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -32,13 +32,16 @@ hostServer.use(allowCrossDomain);
 // Angular DIST output folder
 hostServer.use(express.static(path.join(__dirname, 'client/dist/client')));
 
-hostServer.use(cors());
-hostServer.use(express.json({ extended: true }));
+//hostServer.use(cors());
+//hostServer.use(express.json({ extended: true }));
 hostServer.use('/api', require('./routes/api.routes'));
 
 hostServer.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/dist/client/index.html'));
 });
+
+const port = process.env.PORT || 3000;
+hostServer.set('port', port);
 
 // LOCAL SERVER
 // async function start() {
@@ -60,8 +63,8 @@ let mainWindow;
 
 function createWindow () {
 
-    // const server = http.createServer(hostServer);
-    hostServer.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
+    const server = http.createServer(hostServer);
+    server.listen(port, () => console.log(`Running on localhost: ${port}`));
 
     //Create the browser window
     mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});

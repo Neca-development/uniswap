@@ -15,7 +15,7 @@ router.get('/getAddressFromPrivateKey', async (req, res) => {
     res.json({data: await getAddressFromPrivateKey(req.query.privateKey)});
   } catch (e) {
     res.status(500).json({
-      error: e,
+      error: "1",
     });
   }
 });
@@ -25,7 +25,7 @@ router.get('/getCurrentBlockNumber', async (req, res) => {
     res.json({data: await getCurrentBlockNumber()});
   } catch (e) {
     res.status(500).json({
-      error: e,
+      error: JSON.stringify(e)
     });
   }
 });
@@ -36,7 +36,7 @@ router.get('/getExactTokenLiquidityTransactions', async (req, res) => {
       res.json({data: await getExactTokenLiquidityTransactions(req.query.tokenAddress)});
     } catch (e) {
       res.status(500).json({
-        error: e,
+        error: "3",
       });
     }
   } else {
@@ -52,7 +52,7 @@ router.get('/getPairLiquidity', async (req, res) => {
       res.json({data: await getPairLiquidity(req.query.tokenAddress)});
     } catch (e) {
       res.status(500).json({
-        error: e,
+        error: "4",
       });
     }
   } else {
@@ -67,7 +67,7 @@ router.get('/getLiquidityTransactions', async (req, res) => {
     res.json({data: await getLiquidityTransactions(req.query.blockNumber)});
   } catch (e) {
     res.status(500).json({
-      error: e,
+      error: "5",
     });
   }
 });
@@ -78,7 +78,7 @@ router.get('/getBalance', async (req, res) => {
       res.json({data: await getBalance(req.query.walletAddress)});
     } catch (e) {
       res.status(500).json({
-        error: e,
+        error: "6",
       });
     }
   } else {
