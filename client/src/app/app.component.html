@@ -16,10 +16,10 @@
         />
       </mat-form-field>
       <div class="pair-data" *ngIf="swap.tokenAddress">
-        <p>tokenX - ETH</p>
+        <p>{{data.tokenSymbol}} - ETH</p>
         <p *ngIf="!data.liquidity.loading">
           Liquidity: <br>
-          {{data.liquidity.tokenX}} {{swap.tokenSymbol}} <br>
+          {{data.liquidity.tokenX}} {{data.tokenSymbol}} <br>
           {{data.liquidity.weth}} ETH
         </p>
         <p *ngIf="data.liquidity.loading">Loading liqudity data...</p>
@@ -30,8 +30,9 @@
       <h2>Wallet balance</h2>
       <ul *ngIf="settings.privateKey">
         <li>{{data.balance.eth}} ETH</li>
-        <li *ngIf="data.balance.tokenX > 0">{{data.balance.tokenX}} {{swap.tokenSymbol}}</li>
-        <li *ngIf="!data.balance.tokenX">Enter token address to get balance of tokenX</li>
+        <li *ngIf="data.balance.tokenX > 0">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
+        <li *ngIf="data.liquidity.loading">Loading tokenX balance...</li>
+        <li *ngIf="!data.balance.tokenX && !data.liquidity.loading">Enter token address to get balance of tokenX</li>
       </ul>
       <p *ngIf="!settings.privateKey">Enter private key in settings</p>
     </div>
@@ -72,8 +73,9 @@
         </mat-form-field>
       </div>
 
-      <div class="settings-submit">
-        <button mat-raised-button color="primary" (click)="submitSwap()">Submit</button>
+      <div class="settings-submit" >
+        <button mat-raised-button color="primary" (click)="submitSwap()" *ngIf="!swap.active">Submit</button>
+        <button mat-raised-button color="warn" (click)="cancelSwap()" *ngIf="swap.active">Cancel</button>
       </div>
     </div>
 

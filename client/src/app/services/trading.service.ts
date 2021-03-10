@@ -57,6 +57,17 @@ export class TradingService {
     return balance/10**decimals;
   }
 
+  async getTokenXSymbol(tokenAddress){
+    const web3 = this.providersService.getProvider();
+
+    const tokenABI = require('../../assets/abi-token.json');
+
+    const contract = new web3.eth.Contract(tokenABI, tokenAddress);
+    const symbol = await contract.methods.symbol().call();
+
+    return symbol;
+  }
+
   async getCurrentBlockNumber(){
     const web3 = this.providersService.getProvider();
     const blockInfo = await web3.eth.getBlock('latest');
@@ -115,6 +126,7 @@ export class TradingService {
       pairAddress: pair.liquidityToken.address,
       weth: await getTokenAmountByAddress(WETH[chainId].address),
       tokenX: await getTokenAmountByAddress(tokenAddress, tokenB),
+      tokenSymbol: await this.getTokenXSymbol(tokenAddress)
     }
   }
 

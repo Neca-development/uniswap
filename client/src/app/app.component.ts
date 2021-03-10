@@ -1,9 +1,9 @@
+import { WebsocketService } from './services/websocket.service';
 import { ProvidersService } from './services/providers.service';
 import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
-import { webSocket } from "rxjs/webSocket";
-import { environment } from 'src/environments/environment';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
@@ -15,15 +15,15 @@ export class AppComponent implements OnInit {
 
   swap = {
     tokenAddress: '',
-    tokenSymbol: 'tokenX',
     isTokenValid: false,
-    tokenAmount: '1',
+    tokenAmount: '0.01',
     gasVariant: false,
     gasPrice: '',
     active: false,
   };
 
   data  = {
+    tokenSymbol: 'tokenX',
     balance: {
       eth: '0',
       tokenX: 0
@@ -38,8 +38,15 @@ export class AppComponent implements OnInit {
   };
 
   settings;
+  subscription;
 
-  constructor(private settingsService: SettingsService, private tradingService: TradingService, private providersService: ProvidersService){}
+  constructor(
+    private settingsService: SettingsService,
+    private tradingService: TradingService,
+    private providersService: ProvidersService,
+    private websocketService: WebsocketService,
+    private snackBar: MatSnackBar
+  ){}
 
   ngOnInit(): void {
     this.updateComponent();
@@ -49,13 +56,18 @@ export class AppComponent implements OnInit {
 
       if(this.settings.address){
         this.data.balance.eth = await this.tradingService.getBalance(this.settings.address);
+
+        if(this.swap.isTokenValid){
+          this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
+        }
       }
-    }, 2000)
+    }, 2000);
 
-    // setInterval(async() => {
-    //   await this.tradingService.getLiquidityTransactions();
-    // }, 5000)
-
+    setInterval(async () => {
+      if(this.swap.tokenAddress && this.swap.isTokenValid){
+        this.updateLiquidity(this.swap.tokenAddress);
+      }
+    }, 10000)
   }
 
   async changeHandler(field, { target }){
@@ -63,20 +75,7 @@ export class AppComponent implements OnInit {
 
     if(field == 'tokenAddress'){
       this.data.liquidity.loading = true;
-      const response = await this.tradingService.getPairLiquidity(target.value);
-
-      if(this.settings.address){
-        this.data.balance.tokenX = await this.tradingService.getTokenXBalance(target.value, this.settings.address);
-      }
-
-      const { error, weth, tokenX } = response;
-
-      if(error){
-        console.log('Invalid token');
-        //TODO: add error boundary
-      }
-
-      this.data.liquidity = { loading: false,  weth, tokenX };
+      await this.updateLiquidity(target.value);
     }
   }
 
@@ -85,10 +84,8 @@ export class AppComponent implements OnInit {
   }
 
   async updateComponent(){
-    console.log('update');
+    console.log('Update settings');
 
-    // this.swap = this.swapInitValues;
-    // this.data = this.dataInitValues;
     this.settings = this.settingsService.getSettings();
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
@@ -97,29 +94,50 @@ export class AppComponent implements OnInit {
     }
   }
 
+  async updateLiquidity(tokenAddress){
+    const response = await this.tradingService.getPairLiquidity(tokenAddress);
+
+    if(this.settings.address){
+      this.data.balance.tokenX = await this.tradingService.getTokenXBalance(tokenAddress, this.settings.address);
+    }
+
+    const { error, weth, tokenX, tokenSymbol } = response;
+
+    if(error){
+      console.log('Invalid token');
+      this.swap.isTokenValid = false;
+      // this.openSnackBar('Invalid token', 'Close');
+    }
+
+    this.data.liquidity = { loading: false,  weth, tokenX };
+    this.data.tokenSymbol = tokenSymbol || 'tokenX';
+    this.swap.isTokenValid = true;
+  }
+
   async submitSwap(){
-    const ws = webSocket('ws://localhost:3000');
     this.data.status = "Waiting for liquidity to be added";
 
-    const observableA = ws.multiplex(
-      () => ({type: 'subscribeLiquidity', tokenAddress: this.swap.tokenAddress, nodeAddress: this.settings.network.nodeAddress || environment.INFURA_WSS_ROPSTEN}),
-      () => ({type: 'unsubscribe'}), // ...and when gets this one, it will stop.
-      message => true // If the function returns `true` message is passed down the stream. Skipped if the function returns false.
-    );
+    this.websocketService.startWatching(this.swap.tokenAddress, this.settings.network.nodeAddress);
+    const observable = this.websocketService.getOservable();
 
-
-    const subA = observableA.subscribe(async message => {
+    this.subscription = observable.subscribe(async message => {
       console.log(message);
       this.swap.active = true;
 
       if(message.type == 'success' || message.type == 'error'){
-        subA.unsubscribe();
+        this.subscription.unsubscribe();
 
         if(message.type == 'success' && this.settings.address){
           this.data.status = 'Liquidity tx in the pending block';
           try {
-            await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
-            this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
+            const receipt = await this.tradingService.initTransaction(
+              this.swap.tokenAddress,
+              this.swap.tokenAmount,
+              this.settings.address,
+              this.settings.privateKey
+            );
+            console.log(receipt);
+            this.data.status = `Swap executed in block ${receipt.blockNumber}`;
           } catch (error) {
             this.data.status = 'Swap failed to execute';
           }
@@ -127,6 +145,20 @@ export class AppComponent implements OnInit {
           // TODO: error boundary
         }
       }
+    });
+  }
+
+  async cancelSwap(){
+    this.subscription.unsubscribe();
+    console.log('canceled', this.subscription);
+    this.swap.active = false;
+  }
+
+  openSnackBar(message: string, action: string) {
+    this.snackBar.open(message, action, {
+      duration: 0,
+      horizontalPosition: 'right',
+      verticalPosition: 'bottom'
     });
   }
 }
