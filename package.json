@@ -6,7 +6,8 @@
   "scripts": {
     "server": "nodemon index.js",
     "client": "npm run start --prefix client",
-    "app": "concurrently \"npm run server\" \"npm run client\""
+    "app": "concurrently \"npm run server\" \"npm run client\"",
+    "package": "npm run build --prefix client && electron-packager ."
   },
   "author": "",
   "license": "ISC",
