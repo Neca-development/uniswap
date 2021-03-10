@@ -3,6 +3,7 @@ import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
 import { webSocket } from "rxjs/webSocket";
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -98,32 +99,34 @@ export class AppComponent implements OnInit {
 
   async submitSwap(){
     const ws = webSocket('ws://localhost:3000');
-
-    interface IMessage{
-      type: string,
-      value: string
-    }
+    this.data.status = "Waiting for liquidity to be added";
 
     const observableA = ws.multiplex(
-      () => ({type: 'subscribeLiquidity', tokenAddress: this.swap.tokenAddress, nodeAddress: this.settings.network.nodeAddress}),
+      () => ({type: 'subscribeLiquidity', tokenAddress: this.swap.tokenAddress, nodeAddress: this.settings.network.nodeAddress || environment.INFURA_WSS_ROPSTEN}),
       () => ({type: 'unsubscribe'}), // ...and when gets this one, it will stop.
-      (message: IMessage) => true // If the function returns `true` message is passed down the stream. Skipped if the function returns false.
+      message => true // If the function returns `true` message is passed down the stream. Skipped if the function returns false.
     );
 
-    const subA = observableA.subscribe(messageForA => console.log(messageForA));
 
-    // if(this.settings.address){
+    const subA = observableA.subscribe(async message => {
+      console.log(message);
+      this.swap.active = true;
 
-    //   // this.swap.active = true;
-    //   // this.data.status = "Waiting for liquidity to be added";
-    //   // this.data.status = 'Liquidity tx in the pending block';
-    //   // await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
-    //   // this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
-    //   // this.swap.active = false;
-    // } else {
-    //   console.log('enter private key');
+      if(message.type == 'success' || message.type == 'error'){
+        subA.unsubscribe();
 
-    //   //TODO: add error boundary
-    // }
+        if(message.type == 'success' && this.settings.address){
+          this.data.status = 'Liquidity tx in the pending block';
+          try {
+            await this.tradingService.initTransaction(this.swap.tokenAddress, this.swap.tokenAmount, this.settings.address, this.settings.privateKey);
+            this.data.status = `Swap executed in block ${this.data.currentBlock + ''}`;
+          } catch (error) {
+            this.data.status = 'Swap failed to execute';
+          }
+        } else {
+          // TODO: error boundary
+        }
+      }
+    });
   }
 }
