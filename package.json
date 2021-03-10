@@ -6,8 +6,7 @@
   "scripts": {
     "server": "nodemon index.js",
     "client": "npm run start --prefix client",
-    "mainnet": "cross-env NODE-ENV=mainnet concurrently \"npm run server\" \"npm run client\"",
-    "ropsten": "cross-env NODE-ENV=ropsten concurrently \"npm run server\" \"npm run client\""
+    "app": "concurrently \"npm run server\" \"npm run client\""
   },
   "author": "",
   "license": "ISC",

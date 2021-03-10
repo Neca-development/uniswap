@@ -106,8 +106,8 @@ export class AppComponent implements OnInit {
 
     const observableA = ws.multiplex(
       () => ({type: 'subscribeLiquidity', tokenAddress: this.swap.tokenAddress, nodeAddress: this.settings.network.nodeAddress}),
-      () => ({}), // ...and when gets this one, it will stop.
-      (message: IMessage) => message.type === 'success' // If the function returns `true` message is passed down the stream. Skipped if the function returns false.
+      () => ({type: 'unsubscribe'}), // ...and when gets this one, it will stop.
+      (message: IMessage) => true // If the function returns `true` message is passed down the stream. Skipped if the function returns false.
     );
 
     const subA = observableA.subscribe(messageForA => console.log(messageForA));

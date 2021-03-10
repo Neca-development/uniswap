@@ -8,7 +8,7 @@ async function getLiquidityTransactions(nodeAddress) {
 
   blockInfo = await web3.eth.getBlock('pending', true);  
 
-  const transactionsToRouter = blockInfo.transactions.filter((tx) => tx.to == process.env.ROUTER_ADDRESS);
+  const transactionsToRouter = blockInfo.transactions.filter((tx) => tx.to == '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
 
   const addLiquidityTransactions = transactionsToRouter.filter((tx) => {
     const decodedData = decoder.decodeData(tx.input);

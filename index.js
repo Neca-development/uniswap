@@ -10,7 +10,7 @@ const { app, BrowserWindow } = electron;
 const WebSocket = require("ws");
 const getExactTokenLiquidityTransactions = require('./functions/getExactTokenLiquidityTransactions');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 const allowCrossDomain = function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -49,26 +49,28 @@ async function start() {
 
       webSocketServer.on('connection', ws => {
         ws.on('message', async (m) => {
+          ws.send(JSON.stringify('Start watching your request'));
           const messageObject = JSON.parse(m);
           switch (messageObject.type){
             case "subscribeLiquidity":
               console.log(m);
               let interval = setInterval( async () => {
-                getExactTokenLiquidityTransactions(messageObject.tokenAddress, messageObject.nodeAddress).then((value) => {
-                  if(value.length){
-                    console.log('Have one');
-                    ws.send(JSON.stringify({type: 'success', value: value[0].hash}));
-                    clearInterval(interval);
-                  }
-                }); 
+                getExactTokenLiquidityTransactions(messageObject.tokenAddress, messageObject.nodeAddress)
+                  .then((value) => {
+                    if(value.length){
+                      console.log('Have one');
+                      ws.send(JSON.stringify({type: 'success', value: value[0].hash}));
+                      clearInterval(interval);
+                    }
+                  })
+                  .catch((error) => {
+                    ws.send(JSON.stringify({type: 'error', value: error}));
+                  })
               }, 2000);
           }
-          webSocketServer.clients.forEach(client => client.send(m));
         });
     
         ws.on("error", e => ws.send(e));
-    
-        ws.send(JSON.stringify('Hi there, I am a WebSocket server'));
       });
       server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
   } catch (e) {
