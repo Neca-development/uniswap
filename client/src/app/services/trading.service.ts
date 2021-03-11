@@ -13,24 +13,14 @@ export class TradingService {
   // IDEA: mb should remove settings service
   constructor(private settingsService: SettingsService, private providersService: ProvidersService){}
 
-  getEthersProvider(chainIdInput){
-    return ethers.getDefaultProvider(chainIdInput, {
-      infura: {
-          projectId: environment.INFURA_PROJECT_ID,
-          projectSecret: environment.INFURA_PROJECT_SECRET,
-      },
-      etherscan: environment.ETHERSCAN_API_KEY,
-      alchemy: environment.ALCHEMY_API_KEY
-    });
-  }
-
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
     return ''+trueAmount;
   }
 
   async getGasPrice(chainIdInput){
-    const gasPrice = await this.getEthersProvider(chainIdInput).getGasPrice();
+    const provider = this.providersService.getEthersProvider(chainIdInput);
+    const gasPrice = await provider.getGasPrice();
     return gasPrice;
   }
 
@@ -79,8 +69,10 @@ export class TradingService {
   }
 
   getAccount(privateKey, chainIdInput){
+    const provider = this.providersService.getEthersProvider(chainIdInput);
+
     const signer = new ethers.Wallet(privateKey);
-    const account = signer.connect(this.getEthersProvider(chainIdInput));
+    const account = signer.connect(provider);
 
     return account;
   }
@@ -151,9 +143,10 @@ export class TradingService {
 
   async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, chainIdInput, inputSlippage = 0.5, inputDeadline = 20){
     const web3 = this.providersService.getProvider();
+    const provider = this.providersService.getEthersProvider(chainIdInput);
 
-    const signer = new ethers.Wallet(privateKey, this.getEthersProvider(chainIdInput));
-    const account = signer.connect(this.getEthersProvider(chainIdInput));
+    const signer = new ethers.Wallet(privateKey, provider);
+    const account = signer.connect(provider);
 
 
     // TODO: move out getTrage (?)

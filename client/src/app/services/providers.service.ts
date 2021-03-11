@@ -30,7 +30,16 @@ export class ProvidersService {
     }
   }
 
-  getEthersProvider(){
-    return new ethers.providers.Web3Provider(this.web3);
+  getEthersProvider(chainIdInput){
+    const provider = ethers.getDefaultProvider(chainIdInput, {
+      infura: {
+          projectId: environment.INFURA_PROJECT_ID,
+          projectSecret: environment.INFURA_PROJECT_SECRET,
+      },
+      etherscan: environment.ETHERSCAN_API_KEY,
+      alchemy: environment.ALCHEMY_API_KEY
+    });
+
+    return provider;
   }
 }

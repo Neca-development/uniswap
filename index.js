@@ -66,7 +66,6 @@ async function start() {
                 clearInterval(interval);
               })
           }, 2000);
-          break;
       }
     });
 

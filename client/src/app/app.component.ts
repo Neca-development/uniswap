@@ -82,6 +82,10 @@ export class AppComponent implements OnInit {
 
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
+    if(this.swap.tokenAddress){
+      this.updateLiquidity(this.swap.tokenAddress);
+    }
+
     if(this.settings.privateKey){
       try {
         this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
@@ -125,12 +129,12 @@ export class AppComponent implements OnInit {
   }
 
   async submitSwap(){
-    if(this.settings.address){
+    if(!this.settings.address){
       this.openSnackBar('Check your Private Key');
       return;
     }
 
-    if(this.swap.isTokenValid){
+    if(!this.swap.isTokenValid){
       this.openSnackBar('Check token address');
       return;
     }
