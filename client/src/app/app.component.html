@@ -14,14 +14,17 @@
           [value]="swap.tokenAddress"
           (change)="changeHandler('tokenAddress', $event)"
         />
+        <!-- Error working wrong -->
+        <mat-error *ngIf="!swap.isTokenValid">Invalid token address</mat-error>
       </mat-form-field>
       <div class="pair-data" *ngIf="swap.tokenAddress">
         <p>{{data.tokenSymbol}} - ETH</p>
-        <p *ngIf="!data.liquidity.loading">
+        <p *ngIf="!data.liquidity.loading && swap.isTokenValid">
           Liquidity: <br>
           {{data.liquidity.tokenX}} {{data.tokenSymbol}} <br>
           {{data.liquidity.weth}} ETH
         </p>
+        <p *ngIf="!data.liquidity.loading && !swap.isTokenValid">Invalid token address</p>
         <p *ngIf="data.liquidity.loading">Loading liqudity data...</p>
       </div>
     </div>
@@ -30,7 +33,7 @@
       <h2>Wallet balance</h2>
       <ul *ngIf="settings.privateKey">
         <li>{{data.balance.eth}} ETH</li>
-        <li *ngIf="data.balance.tokenX > 0">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
+        <li *ngIf="data.balance.tokenX > 0 && swap.isTokenValid">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
         <li *ngIf="data.liquidity.loading">Loading tokenX balance...</li>
         <li *ngIf="!data.balance.tokenX && !data.liquidity.loading">Enter token address to get balance of tokenX</li>
       </ul>

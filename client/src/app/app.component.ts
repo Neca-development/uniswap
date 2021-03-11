@@ -11,7 +11,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  title = 'client';
 
   swap = {
     tokenAddress: '',
@@ -84,37 +83,52 @@ export class AppComponent implements OnInit {
   }
 
   async updateComponent(){
-    console.log('Update settings');
-
     this.settings = this.settingsService.getSettings();
+
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
     if(this.settings.privateKey){
-      this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
+      try {
+        this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
+      } catch (error) {
+        this.openSnackBar('Check your Private Key');
+      }
     }
   }
 
   async updateLiquidity(tokenAddress){
-    const response = await this.tradingService.getPairLiquidity(tokenAddress);
-
-    if(this.settings.address){
-      this.data.balance.tokenX = await this.tradingService.getTokenXBalance(tokenAddress, this.settings.address);
-    }
+    const response = await this.tradingService.getPairLiquidity(tokenAddress, this.settings.network.chainId);
 
     const { error, weth, tokenX, tokenSymbol } = response;
 
     if(error){
       console.log('Invalid token');
       this.swap.isTokenValid = false;
+      this.data.liquidity.loading = false;
+      this.data.tokenSymbol = 'tokenX';
       // this.openSnackBar('Invalid token', 'Close');
-    }
+    } else {
+      this.data.liquidity = { loading: false,  weth, tokenX };
+      this.data.tokenSymbol = tokenSymbol || 'tokenX';
+      this.swap.isTokenValid = true;
 
-    this.data.liquidity = { loading: false,  weth, tokenX };
-    this.data.tokenSymbol = tokenSymbol || 'tokenX';
-    this.swap.isTokenValid = true;
+      if(this.settings.address){
+        this.data.balance.tokenX = await this.tradingService.getTokenXBalance(tokenAddress, this.settings.address);
+      }
+    }
   }
 
   async submitSwap(){
+    if(this.settings.address){
+      this.openSnackBar('Check your Private Key');
+      return;
+    }
+
+    if(this.swap.isTokenValid){
+      this.openSnackBar('Check token address');
+      return;
+    }
+
     this.data.status = "Waiting for liquidity to be added";
 
     this.websocketService.startWatching(this.swap.tokenAddress, this.settings.network.nodeAddress);
@@ -127,22 +141,22 @@ export class AppComponent implements OnInit {
       if(message.type == 'success' || message.type == 'error'){
         this.subscription.unsubscribe();
 
-        if(message.type == 'success' && this.settings.address){
+        if(message.type == 'success'){
           this.data.status = 'Liquidity tx in the pending block';
           try {
             const receipt = await this.tradingService.initTransaction(
               this.swap.tokenAddress,
               this.swap.tokenAmount,
               this.settings.address,
-              this.settings.privateKey
+              this.settings.privateKey,
+              this.settings.network.chainId
             );
             console.log(receipt);
             this.data.status = `Swap executed in block ${receipt.blockNumber}`;
           } catch (error) {
             this.data.status = 'Swap failed to execute';
+            this.openSnackBar('Swap failed to execute');
           }
-        } else {
-          // TODO: error boundary
         }
       }
     });
@@ -150,12 +164,12 @@ export class AppComponent implements OnInit {
 
   async cancelSwap(){
     this.subscription.unsubscribe();
-    console.log('canceled', this.subscription);
+    this.openSnackBar('Swap canceled by user');
     this.swap.active = false;
   }
 
-  openSnackBar(message: string, action: string) {
-    this.snackBar.open(message, action, {
+  openSnackBar(message: string, action?: string) {
+    this.snackBar.open(message, action || 'Close', {
       duration: 0,
       horizontalPosition: 'right',
       verticalPosition: 'bottom'
