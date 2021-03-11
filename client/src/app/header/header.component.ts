@@ -67,11 +67,19 @@ export class SettingsDialogComponent implements OnInit {
         console.log('Invalid node address');
         this.settings.network = {
           name: 'ROPSTEN',
+          nodeAddress: '',
           chainId: 3
         };
         this.settingsService.setSettings(this.settings);
         // TODO: add eror boundary
       }
+    } else {
+      this.settings.network = {
+        name: 'ROPSTEN',
+        nodeAddress: '',
+        chainId: 3
+      };
+      this.settingsService.setSettings(this.settings);
     }
 
     if(this.settings.privateKey){
