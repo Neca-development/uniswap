@@ -32,7 +32,10 @@ export class SettingsDialogComponent implements OnInit {
 
   networks = [
     {value: 1, name: 'MAINNET'},
-    {value: 3, name: 'ROPSTEN'}
+    {value: 3, name: 'ROPSTEN'},
+    {value: 4, name: 'RINKEBY'},
+    {value: 5, name: 'GOERLI'},
+    {value: 42, name: 'KOVAN'}
   ]
 
   constructor(private settingsService: SettingsService, private providerService: ProvidersService){}

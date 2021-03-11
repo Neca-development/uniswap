@@ -53,13 +53,7 @@ export class AppComponent implements OnInit {
     setInterval(async () => {
       this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
 
-      if(this.settings.address){
-        this.data.balance.eth = await this.tradingService.getBalance(this.settings.address);
-
-        if(this.swap.isTokenValid){
-          this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
-        }
-      }
+      this.updateBalance();
     }, 2000);
 
     setInterval(async () => {
@@ -74,6 +68,7 @@ export class AppComponent implements OnInit {
 
     if(field == 'tokenAddress'){
       this.data.liquidity.loading = true;
+      this.swap.isTokenValid = false;
       await this.updateLiquidity(target.value);
     }
   }
@@ -90,8 +85,19 @@ export class AppComponent implements OnInit {
     if(this.settings.privateKey){
       try {
         this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
+        this.updateBalance();
       } catch (error) {
         this.openSnackBar('Check your Private Key');
+      }
+    }
+  }
+
+  async updateBalance(){
+    if(this.settings.address){
+      this.data.balance.eth = await this.tradingService.getBalance(this.settings.address);
+
+      if(this.swap.isTokenValid){
+        this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
       }
     }
   }

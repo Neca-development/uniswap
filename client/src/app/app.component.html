@@ -33,9 +33,9 @@
       <h2>Wallet balance</h2>
       <ul *ngIf="settings.privateKey">
         <li>{{data.balance.eth}} ETH</li>
-        <li *ngIf="data.balance.tokenX > 0 && swap.isTokenValid">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
+        <li *ngIf="swap.isTokenValid">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
         <li *ngIf="data.liquidity.loading">Loading tokenX balance...</li>
-        <li *ngIf="!data.balance.tokenX && !data.liquidity.loading">Enter token address to get balance of tokenX</li>
+        <li *ngIf="!data.liquidity.loading && !swap.isTokenValid">Enter token address to get balance of tokenX</li>
       </ul>
       <p *ngIf="!settings.privateKey">Enter private key in settings</p>
     </div>

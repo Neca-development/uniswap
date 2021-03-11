@@ -1,6 +1,6 @@
 import { ProvidersService } from './providers.service';
 import { Injectable } from '@angular/core';
-import { Fetcher, ChainId, WETH, Route, Trade, TokenAmount, Percent, TradeType  } from '@uniswap/sdk';
+import { Fetcher, WETH, Route, Trade, TokenAmount, Percent, TradeType } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
 import { SettingsService } from './settings.service';
@@ -10,26 +10,27 @@ import { SettingsService } from './settings.service';
 })
 export class TradingService {
 
-  // TODO: fix network
-  provider = ethers.getDefaultProvider('ropsten', {
-    infura: {
-        projectId: environment.INFURA_PROJECT_ID,
-        projectSecret: environment.INFURA_PROJECT_SECRET,
-    },
-    etherscan: environment.ETHERSCAN_API_KEY,
-    alchemy: environment.ALCHEMY_API_KEY
-  });
-
   // IDEA: mb should remove settings service
   constructor(private settingsService: SettingsService, private providersService: ProvidersService){}
+
+  getEthersProvider(chainIdInput){
+    return ethers.getDefaultProvider(chainIdInput, {
+      infura: {
+          projectId: environment.INFURA_PROJECT_ID,
+          projectSecret: environment.INFURA_PROJECT_SECRET,
+      },
+      etherscan: environment.ETHERSCAN_API_KEY,
+      alchemy: environment.ALCHEMY_API_KEY
+    });
+  }
 
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
     return ''+trueAmount;
   }
 
-  async getGasPrice(){
-    const gasPrice = await this.provider.getGasPrice();
+  async getGasPrice(chainIdInput){
+    const gasPrice = await this.getEthersProvider(chainIdInput).getGasPrice();
     return gasPrice;
   }
 
@@ -77,9 +78,9 @@ export class TradingService {
     return blockInfo.number;
   }
 
-  getAccount(privateKey){
+  getAccount(privateKey, chainIdInput){
     const signer = new ethers.Wallet(privateKey);
-    const account = signer.connect(this.provider);
+    const account = signer.connect(this.getEthersProvider(chainIdInput));
 
     return account;
   }
@@ -151,8 +152,8 @@ export class TradingService {
   async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, chainIdInput, inputSlippage = 0.5, inputDeadline = 20){
     const web3 = this.providersService.getProvider();
 
-    const signer = new ethers.Wallet(privateKey, this.provider);
-    const account = signer.connect(this.provider);
+    const signer = new ethers.Wallet(privateKey, this.getEthersProvider(chainIdInput));
+    const account = signer.connect(this.getEthersProvider(chainIdInput));
 
 
     // TODO: move out getTrage (?)
