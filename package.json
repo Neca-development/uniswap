@@ -6,8 +6,8 @@
   "scripts": {
     "server": "nodemon index.js",
     "client": "npm run start --prefix client",
-    "mainnet": "cross-env NODE-ENV=mainnet concurrently \"npm run server\" \"npm run client\"",
-    "ropsten": "cross-env NODE-ENV=ropsten concurrently \"npm run server\" \"npm run client\""
+    "app": "concurrently \"npm run server\" \"npm run client\"",
+    "package": "npm run build --prefix client && electron-packager ."
   },
   "author": "",
   "license": "ISC",
@@ -15,6 +15,7 @@
     "@uniswap/sdk": "^3.0.3",
     "concurrently": "^6.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
     "ethereum-input-data-decoder": "^0.3.1",
     "ethers": "^5.0.31",
     "express": "^4.17.1",
@@ -22,7 +23,8 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "dotenv": "^8.2.0",
+    "electron": "^12.0.0",
+    "electron-packager": "^15.2.0",
     "nodemon": "^2.0.7"
   }
 }
