@@ -76,31 +76,31 @@ async function start() {
 
 
 // ELECTRON APP
-// let mainWindow;
+let mainWindow;
 
-// function createWindow () {
+function createWindow () {
 
-//   start();
+  start();
 
-//   //Create the browser window
-//   mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
+  //Create the browser window
+  mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
 
-//   mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
+  mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
 
-//   // mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
-//   mainWindow.on('close', function() {
-//       mainWindow = null;
-//   });
-// }
+  mainWindow.on('close', function() {
+      mainWindow = null;
+  });
+}
 
-// app.on('ready', createWindow);
-// app.on('window-all-closed', function() {
-//   if (process.platform !== 'darwin') {
-//       app.quit();
-//   }
-// });
+app.on('ready', createWindow);
+app.on('window-all-closed', function() {
+  if (process.platform !== 'darwin') {
+      app.quit();
+  }
+});
 
 // LOCAL SERVER
-start();
+// start();
 // // require('./test.js');

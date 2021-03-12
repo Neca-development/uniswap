@@ -82,19 +82,20 @@ export class AppComponent implements OnInit {
   async updateComponent(){
     const newSettings = this.settingsService.getSettings();
 
-    // if(this.settings){
-    //   try {
-    //     if(newSettings.network.chainId != this.settings.network.chainId){
-    //       this.swap.tokenAddress = '';
+    if(this.settings?.network){
 
-    //       if(this.subscription){
-    //         this.subscription.unsubscribe();
-    //         this.openSnackBar('Swap canceled');
-    //         this.swap.active = false;
-    //       }
-    //     }
-    //   } catch (error) {}
-    // }
+      if(newSettings.network.chainId !== this.settings.network?.chainId){
+        console.log('here');
+        this.swap.tokenAddress = '';
+        console.log(this.swap.tokenAddress);
+
+        if(this?.subscription){
+          this.subscription.unsubscribe();
+          this.openSnackBar('Swap canceled');
+          this.swap.active = false;
+        }
+      }
+    }
 
     this.settings = this.settingsService.getSettings();
     this.providersService.setProvider(this.settings.network.nodeAddress);
@@ -123,7 +124,9 @@ export class AppComponent implements OnInit {
       this.data.balance.eth = await this.tradingService.getBalance(this.settings.address);
 
       if(this.swap.isTokenValid){
-        this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
+        try {
+          this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
+        } catch (error) {}
       }
 
       this.data.balance.loading = false;

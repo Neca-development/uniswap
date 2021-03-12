@@ -54,32 +54,21 @@ export class SettingsDialogComponent implements OnInit {
 
   async saveClick(){
     if(this.settings.network.nodeAddress){
-      this.settings.network.chainId = await this.providerService.getChainId(this.settings.network.nodeAddress);
+      try {
+        this.settings.network.chainId = await this.providerService.getChainId(this.settings.network.nodeAddress);
 
-      if(this.settings.network.chainId){
         const { name } = this.networks.find((net) => net.value == this.settings.network.chainId);
 
         this.settings.network.name = name || 'unknown network';
         this.settingsService.setSettings(this.settings);
-        console.log(this.settings);
-
-      } else {
-        console.log('Invalid node address');
+      } catch (error) {
         this.settings.network = {
           name: 'ROPSTEN',
           nodeAddress: '',
           chainId: 3
         };
         this.settingsService.setSettings(this.settings);
-        // TODO: add eror boundary
       }
-    } else {
-      this.settings.network = {
-        name: 'ROPSTEN',
-        nodeAddress: '',
-        chainId: 3
-      };
-      this.settingsService.setSettings(this.settings);
     }
 
     if(this.settings.privateKey){
