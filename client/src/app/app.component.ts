@@ -38,6 +38,7 @@ export class AppComponent implements OnInit {
     currentBlock: 0,
     status: 'waiting for liquidity',
     isAddressValid: false,
+    isNetworkChanging: false
   };
 
   settings;
@@ -67,6 +68,12 @@ export class AppComponent implements OnInit {
     // }, 10000)
   }
 
+  checkSaveAction(isSaveAction = false){
+    if(isSaveAction){
+      this.updateComponent();
+    }
+  }
+
   async changeHandler(field, { target }){
     this.swap[field] = target.value;
 
@@ -79,13 +86,16 @@ export class AppComponent implements OnInit {
     this.swap.gasVariant = value == 'default'? false : true;
   }
 
+  setChangingNetwork(value){
+    console.log('changing network', value);
+    this.data.isNetworkChanging = value;
+  }
+
   async updateComponent(){
-    const newSettings = this.settingsService.getSettings();
+    if(this.settings){
+      const newSettings = this.settingsService.getSettings();
 
-    if(this.settings?.network){
-
-      if(newSettings.network.chainId !== this.settings.network?.chainId){
-        console.log('here');
+      if(newSettings.network.chainId !== this.settings.network.chainId){
         this.swap.tokenAddress = '';
         console.log(this.swap.tokenAddress);
 
@@ -95,9 +105,12 @@ export class AppComponent implements OnInit {
           this.swap.active = false;
         }
       }
+
+      this.settings = newSettings;
+    } else {
+      this.settings = this.settingsService.getSettings();
     }
 
-    this.settings = this.settingsService.getSettings();
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
     if(this.swap.tokenAddress){
@@ -148,7 +161,6 @@ export class AppComponent implements OnInit {
       this.data.liquidity.loading = false;
       this.data.liquidity.isLoaderShown = false;
       this.data.tokenSymbol = 'tokenX';
-      // this.openSnackBar('Invalid token', 'Close');
     } else {
       this.data.liquidity = { loading: false, isLoaderShown: false,  weth, tokenX };
       this.data.liquidity.isLoaderShown = false;

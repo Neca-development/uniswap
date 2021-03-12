@@ -1,5 +1,5 @@
 <div class="main-container">
-  <app-header (changeSettings)="updateComponent()"></app-header>
+  <app-header (changeSettings)="checkSaveAction($event)" (changingNetwork)="setChangingNetwork($event)"></app-header>
 
   <div class="content">
 
@@ -31,9 +31,9 @@
 
     <div class="wallet">
       <h2>Wallet balance</h2>
-      <ul *ngIf="settings.address && data.isAddressValid">
+      <ul *ngIf="settings.privateKey && settings.address && data.isAddressValid">
         <li *ngIf="!data.balance.isLoaderShown">{{data.balance.eth}} ETH</li>
-        <li *ngIf="!data.balance.isLoaderShown && swap.isTokenValid && !data.liquidity.isLoaderShown">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
+        <li *ngIf="!data.balance.isLoaderShown && swap.tokenAddress && swap.isTokenValid && !data.liquidity.isLoaderShown">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
         <li *ngIf="data.balance.loading && data.balance.isLoaderShown">Loading balance...</li>
         <li *ngIf="!data.balance.loading && data.liquidity.isLoaderShown">Loading tokenX balance...</li>
         <li *ngIf="!data.liquidity.loading && !swap.isTokenValid">Enter token address to get balance of tokenX</li>

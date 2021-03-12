@@ -149,7 +149,7 @@ export class TradingService {
     const account = signer.connect(provider);
 
 
-    // TODO: move out getTrage (?)
+    // IDEA: move out getTrage (?)
     const { tokenA, tokenB, trade } = await this.getTrade(inputTokenB, inputCount, chainIdInput);
 
     // TRANSACTION VALUES
