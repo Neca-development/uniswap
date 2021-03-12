@@ -1,6 +1,6 @@
 import { ProvidersService } from './providers.service';
 import { Injectable } from '@angular/core';
-import { Fetcher, ChainId, WETH, Route, Trade, TokenAmount, Percent, TradeType  } from '@uniswap/sdk';
+import { Fetcher, WETH, Route, Trade, TokenAmount, Percent, TradeType } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
 import { SettingsService } from './settings.service';
@@ -10,15 +10,7 @@ import { SettingsService } from './settings.service';
 })
 export class TradingService {
 
-  provider = ethers.getDefaultProvider('ropsten', {
-    infura: {
-        projectId: environment.INFURA_PROJECT_ID,
-        projectSecret: environment.INFURA_PROJECT_SECRET,
-    },
-    etherscan: environment.ETHERSCAN_API_KEY,
-    alchemy: environment.ALCHEMY_API_KEY
-  });
-
+  // IDEA: mb should remove settings service
   constructor(private settingsService: SettingsService, private providersService: ProvidersService){}
 
   getCountWithDecimals(count, decimal){
@@ -26,8 +18,9 @@ export class TradingService {
     return ''+trueAmount;
   }
 
-  async getGasPrice(){
-    const gasPrice = await this.provider.getGasPrice();
+  async getGasPrice(chainIdInput){
+    const provider = this.providersService.getEthersProvider(chainIdInput);
+    const gasPrice = await provider.getGasPrice();
     return gasPrice;
   }
 
@@ -75,16 +68,18 @@ export class TradingService {
     return blockInfo.number;
   }
 
-  getAccount(privateKey){
+  getAccount(privateKey, chainIdInput){
+    const provider = this.providersService.getEthersProvider(chainIdInput);
+
     const signer = new ethers.Wallet(privateKey);
-    const account = signer.connect(this.provider);
+    const account = signer.connect(provider);
 
     return account;
   }
 
-  async getToken(tokenAddress){
+  async getToken(tokenAddress, chainIdInput){
     const web3 = this.providersService.getProvider();
-    const chainId = ChainId.ROPSTEN;
+    const chainId = chainIdInput;
 
     try {
       const tokenChecksummedAddress = web3.utils.toChecksumAddress(tokenAddress);
@@ -95,12 +90,11 @@ export class TradingService {
     }
   }
 
-  // TODO: fix chain id
-  async getPairLiquidity (tokenAddress){
+  async getPairLiquidity (tokenAddress, chainIdInput){
     const web3 = this.providersService.getProvider();
-    const chainId = ChainId.ROPSTEN;
+    const chainId = chainIdInput;
 
-    const tokenB = await this.getToken(tokenAddress);
+    const tokenB = await this.getToken(tokenAddress, chainId);
 
     if(!tokenB){
       return {
@@ -130,9 +124,9 @@ export class TradingService {
     }
   }
 
-  async getTrade(inputTokenB, count){
+  async getTrade(inputTokenB, count, chainIdInput){
     let web3 = this.providersService.getProvider();
-    const chainId =  ChainId.ROPSTEN;
+    const chainId =  chainIdInput;
 
     const tokenBAddress = web3.utils.toChecksumAddress(inputTokenB);
     const tokenB = await Fetcher.fetchTokenData(chainId, tokenBAddress);
@@ -147,15 +141,16 @@ export class TradingService {
     return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
   }
 
-  async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, inputSlippage = 0.5, inputDeadline = 20){
+  async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, chainIdInput, inputSlippage = 0.5, inputDeadline = 20){
     const web3 = this.providersService.getProvider();
+    const provider = this.providersService.getEthersProvider(chainIdInput);
 
-    const signer = new ethers.Wallet(privateKey, this.provider);
-    const account = signer.connect(this.provider);
+    const signer = new ethers.Wallet(privateKey, provider);
+    const account = signer.connect(provider);
 
 
-    // TODO: move out getTrage
-    const { tokenA, tokenB, trade } = await this.getTrade(inputTokenB, inputCount);
+    // TODO: move out getTrage (?)
+    const { tokenA, tokenB, trade } = await this.getTrade(inputTokenB, inputCount, chainIdInput);
 
     // TRANSACTION VALUES
     const slippageTolerance = new Percent((inputSlippage * 10).toString(), '1000'); //(делимое, делитель) // bip = 0.001

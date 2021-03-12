@@ -32,7 +32,10 @@ export class SettingsDialogComponent implements OnInit {
 
   networks = [
     {value: 1, name: 'MAINNET'},
-    {value: 3, name: 'ROPSTEN'}
+    {value: 3, name: 'ROPSTEN'},
+    {value: 4, name: 'RINKEBY'},
+    {value: 5, name: 'GOERLI'},
+    {value: 42, name: 'KOVAN'}
   ]
 
   constructor(private settingsService: SettingsService, private providerService: ProvidersService){}
@@ -55,10 +58,18 @@ export class SettingsDialogComponent implements OnInit {
 
       if(this.settings.network.chainId){
         const { name } = this.networks.find((net) => net.value == this.settings.network.chainId);
+
         this.settings.network.name = name || 'unknown network';
         this.settingsService.setSettings(this.settings);
+        console.log(this.settings);
+
       } else {
         console.log('Invalid node address');
+        this.settings.network = {
+          name: 'ROPSTEN',
+          chainId: 3
+        };
+        this.settingsService.setSettings(this.settings);
         // TODO: add eror boundary
       }
     }
