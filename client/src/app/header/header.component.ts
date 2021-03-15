@@ -1,3 +1,4 @@
+import { NotificationsService } from './../services/notifications.service';
 import { ProvidersService } from './../services/providers.service';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -37,7 +38,12 @@ export class SettingsDialogComponent implements OnInit {
     {value: 42, name: 'KOVAN'}
   ]
 
-  constructor(private _dialog: MatDialogRef<SettingsDialogComponent>, private settingsService: SettingsService, private providerService: ProvidersService){}
+  constructor(
+    private _dialog: MatDialogRef<SettingsDialogComponent>,
+    private settingsService: SettingsService,
+    private providerService: ProvidersService,
+    private notificationsService: NotificationsService
+  ){}
 
   ngOnInit(){
     this.settings = this.settingsService.getSettings();
@@ -61,7 +67,7 @@ export class SettingsDialogComponent implements OnInit {
         this.settings.network.name = name || 'UNKNOWN';
         this.settingsService.setSettings(this.settings);
       } catch (error) {
-
+        this.notificationsService.openSnackBar('Invalid network address');
         this.settings.network = {
           name: 'ROPSTEN',
           nodeAddress: '',
