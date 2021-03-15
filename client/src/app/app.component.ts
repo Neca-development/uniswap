@@ -41,7 +41,8 @@ export class AppComponent implements OnInit {
     currentBlock: 0,
     status: 'waiting for liquidity',
     isAddressValid: false,
-    isNetworkChanging: false
+    isNetworkChanging: false,
+    isSwapWas: false
   };
 
   settings;
@@ -95,7 +96,7 @@ export class AppComponent implements OnInit {
 
       if(newSettings.network.chainId !== this.settings.network.chainId){
         this.swap.tokenAddress = '';
-        console.log(this.swap.tokenAddress);
+        this.data.isSwapWas = false;
 
         if(this?.subscription){
           this.subscription.unsubscribe();
@@ -215,7 +216,15 @@ export class AppComponent implements OnInit {
               this.settings.network.chainId
             );
             console.log(receipt);
-            this.data.status = `Swap executed in block ${receipt.blockNumber}`;
+            this.data.status = `
+              Swap executed in block ${receipt.blockNumber}.
+              Swap hash: ${receipt.hash}.
+              Liquididy added in block ${message.blockNumber}.
+              Liquidity hash: ${message.hash}.
+            `;
+            this.swap.active = false;
+            this.data.isSwapWas = true;
+            this.notificationsService.openSnackBar('Swap executed succesfuly');
           } catch (error) {
             this.data.status = 'Swap failed to execute';
             this.notificationsService.openSnackBar('Swap failed to execute');
@@ -229,5 +238,6 @@ export class AppComponent implements OnInit {
     this.subscription.unsubscribe();
     this.notificationsService.openSnackBar('Swap canceled by user');
     this.swap.active = false;
+    this.data.isSwapWas = false;
   }
 }
