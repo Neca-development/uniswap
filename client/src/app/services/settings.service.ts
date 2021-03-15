@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-
+import { cloneDeep } from 'lodash';
 import { ISettings } from './../models/model';
 
 @Injectable({
@@ -17,7 +17,7 @@ export class SettingsService {
   }
 
   getSettings(){
-    return this._settingsStorage;
+    return cloneDeep(this._settingsStorage);
   }
 
   setSettings(value){

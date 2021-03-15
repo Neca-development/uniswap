@@ -58,14 +58,14 @@ export class AppComponent implements OnInit {
     setInterval(async () => {
       this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
 
-      // this.updateBalance(false);
+      this.updateBalance(false);
     }, 2000);
 
-    // setInterval(async () => {
-    //   if(this.swap.tokenAddress && this.swap.isTokenValid){
-    //     this.updateLiquidity(this.swap.tokenAddress, false);
-    //   }
-    // }, 10000)
+    setInterval(async () => {
+      if(this.swap.tokenAddress && this.swap.isTokenValid){
+        this.updateLiquidity(this.swap.tokenAddress, false);
+      }
+    }, 10000)
   }
 
   checkSaveAction(isSaveAction = false){
@@ -84,11 +84,6 @@ export class AppComponent implements OnInit {
 
   async changeGasTypeHandler({value}){
     this.swap.gasVariant = value == 'default'? false : true;
-  }
-
-  setChangingNetwork(value){
-    console.log('changing network', value);
-    this.data.isNetworkChanging = value;
   }
 
   async updateComponent(){
