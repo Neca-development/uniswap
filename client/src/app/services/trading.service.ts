@@ -1,3 +1,5 @@
+import { IGasPriceResponse} from './../models/model';
+import { ApiService } from './api.service';
 import { ProvidersService } from './providers.service';
 import { Injectable } from '@angular/core';
 import { Fetcher, WETH, Route, Trade, TokenAmount, Percent, TradeType } from '@uniswap/sdk';
@@ -12,17 +14,39 @@ import { PAIR_NO_PAIR, TOKEN_NO_TOKEN } from "./../errors/errors";
 export class TradingService {
 
   // IDEA: mb should remove settings service
-  constructor(private settingsService: SettingsService, private providersService: ProvidersService){}
+  constructor(
+    private settingsService: SettingsService,
+    private providersService: ProvidersService,
+    private apiService: ApiService
+  ){}
 
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
     return ''+trueAmount;
   }
 
-  async getGasPrice(chainIdInput){
-    const provider = this.providersService.getEthersProvider(chainIdInput);
-    const gasPrice = await provider.getGasPrice();
-    return gasPrice;
+  async getGasPrice(chainId, inputGasPrice = 0){
+    if(inputGasPrice){
+      return inputGasPrice * 10**9;
+    }
+
+    if(chainId == 1){
+      try {
+        const gasObservable = await this.apiService.get<IGasPriceResponse>(
+          'https://api.etherscan.io/api?module=gastracker&action=gasoracle',
+          { apiKey: environment.ETHERSCAN_API_KEY }
+        );
+        const responseObject: IGasPriceResponse = await gasObservable.toPromise<IGasPriceResponse>();
+
+        return await +responseObject.result.FastGasPrice * 10**9;
+      } catch (error) {
+        throw new Error(error);
+      }
+    }
+
+    const web3 = this.providersService.getProvider();
+    const gasPrice = await web3.eth.getGasPrice();
+    return +gasPrice;
   }
 
   async getAddressFromPrivateKey(privateKey){
@@ -154,7 +178,7 @@ export class TradingService {
     return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
   }
 
-  async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, chainIdInput, inputSlippage = 0.5, inputDeadline = 20){
+  async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, chainIdInput, inputGasPrice = 0, inputSlippage = 0.5, inputDeadline = 20){
     const web3 = this.providersService.getProvider();
     const provider = this.providersService.getEthersProvider(chainIdInput);
 
@@ -175,7 +199,7 @@ export class TradingService {
     const value = web3.utils.numberToHex(trade.inputAmount.raw.toString());
 
     const gasLimit = web3.utils.numberToHex('300000');
-    const gasPrice = web3.utils.numberToHex((await web3.eth.getGasPrice()).toString());
+    const gasPrice = web3.utils.numberToHex((await this.getGasPrice(chainIdInput, inputGasPrice)).toString());
 
     // CONTRACT INIT (we may add other contracts)
     const uniswap = new ethers.Contract(environment.ROUTER_ADDRESS, [
