@@ -1,6 +1,6 @@
 import { ProvidersService } from './../services/providers.service';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { SettingsService } from './../services/settings.service';
 
 @Component({
@@ -14,12 +14,11 @@ export class HeaderComponent{
 
   constructor(public dialog: MatDialog) {}
 
-  openDialog() {
+  async openDialog() {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {width: '400px'});
 
-    dialogRef.afterClosed().subscribe(result => {
-      this.changeSettings.emit(null);
-    });
+    const result = await dialogRef.afterClosed().toPromise();
+    this.changeSettings.emit(result);
   }
 }
 
@@ -38,7 +37,7 @@ export class SettingsDialogComponent implements OnInit {
     {value: 42, name: 'KOVAN'}
   ]
 
-  constructor(private settingsService: SettingsService, private providerService: ProvidersService){}
+  constructor(private _dialog: MatDialogRef<SettingsDialogComponent>, private settingsService: SettingsService, private providerService: ProvidersService){}
 
   ngOnInit(){
     this.settings = this.settingsService.getSettings();
@@ -54,29 +53,34 @@ export class SettingsDialogComponent implements OnInit {
 
   async saveClick(){
     if(this.settings.network.nodeAddress){
-      this.settings.network.chainId = await this.providerService.getChainId(this.settings.network.nodeAddress);
+      try {
+        this.settings.network.chainId = await this.providerService.getChainId(this.settings.network.nodeAddress);
 
-      if(this.settings.network.chainId){
         const { name } = this.networks.find((net) => net.value == this.settings.network.chainId);
 
-        this.settings.network.name = name || 'unknown network';
+        this.settings.network.name = name || 'UNKNOWN';
         this.settingsService.setSettings(this.settings);
-        console.log(this.settings);
-
-      } else {
-        console.log('Invalid node address');
+      } catch (error) {
         this.settings.network = {
           name: 'ROPSTEN',
+          nodeAddress: '',
           chainId: 3
         };
         this.settingsService.setSettings(this.settings);
-        // TODO: add eror boundary
       }
+    } else {
+      this.settings.network = {
+        name: 'ROPSTEN',
+        nodeAddress: '',
+        chainId: 3
+      };
+      this.settingsService.setSettings(this.settings);
     }
 
     if(this.settings.privateKey){
       this.settingsService.setSettings(this.settings);
     }
 
+    this._dialog.close(true);
   }
 }

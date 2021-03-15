@@ -24,16 +24,21 @@ export class AppComponent implements OnInit {
   data  = {
     tokenSymbol: 'tokenX',
     balance: {
+      isLoaderShown: false,
+      loading: false,
       eth: '0',
       tokenX: 0
     },
     liquidity: {
+      isLoaderShown: false,
       loading: false,
       weth: 0,
       tokenX: 0
     },
     currentBlock: 0,
-    status: 'waiting for liquidity'
+    status: 'waiting for liquidity',
+    isAddressValid: false,
+    isNetworkChanging: false
   };
 
   settings;
@@ -53,23 +58,27 @@ export class AppComponent implements OnInit {
     setInterval(async () => {
       this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
 
-      this.updateBalance();
+      // this.updateBalance(false);
     }, 2000);
 
-    setInterval(async () => {
-      if(this.swap.tokenAddress && this.swap.isTokenValid){
-        this.updateLiquidity(this.swap.tokenAddress);
-      }
-    }, 10000)
+    // setInterval(async () => {
+    //   if(this.swap.tokenAddress && this.swap.isTokenValid){
+    //     this.updateLiquidity(this.swap.tokenAddress, false);
+    //   }
+    // }, 10000)
+  }
+
+  checkSaveAction(isSaveAction = false){
+    if(isSaveAction){
+      this.updateComponent();
+    }
   }
 
   async changeHandler(field, { target }){
     this.swap[field] = target.value;
 
     if(field == 'tokenAddress'){
-      this.data.liquidity.loading = true;
-      this.swap.isTokenValid = false;
-      await this.updateLiquidity(target.value);
+      await this.updateLiquidity(target.value, true);
     }
   }
 
@@ -77,36 +86,71 @@ export class AppComponent implements OnInit {
     this.swap.gasVariant = value == 'default'? false : true;
   }
 
+  setChangingNetwork(value){
+    console.log('changing network', value);
+    this.data.isNetworkChanging = value;
+  }
+
   async updateComponent(){
-    this.settings = this.settingsService.getSettings();
+    if(this.settings){
+      const newSettings = this.settingsService.getSettings();
+
+      if(newSettings.network.chainId !== this.settings.network.chainId){
+        this.swap.tokenAddress = '';
+        console.log(this.swap.tokenAddress);
+
+        if(this?.subscription){
+          this.subscription.unsubscribe();
+          this.openSnackBar('Swap canceled');
+          this.swap.active = false;
+        }
+      }
+
+      this.settings = newSettings;
+    } else {
+      this.settings = this.settingsService.getSettings();
+    }
 
     this.providersService.setProvider(this.settings.network.nodeAddress);
 
     if(this.swap.tokenAddress){
-      this.updateLiquidity(this.swap.tokenAddress);
+      this.updateLiquidity(this.swap.tokenAddress, true);
     }
 
     if(this.settings.privateKey){
       try {
         this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
-        this.updateBalance();
+        this.updateBalance(true);
+        this.data.isAddressValid = true;
       } catch (error) {
+        this.data.isAddressValid = false;
         this.openSnackBar('Check your Private Key');
       }
     }
   }
 
-  async updateBalance(){
+  async updateBalance(isLoaderShown){
     if(this.settings.address){
+      this.data.balance.loading = true;
+      this.data.balance.isLoaderShown = isLoaderShown;
+
       this.data.balance.eth = await this.tradingService.getBalance(this.settings.address);
 
       if(this.swap.isTokenValid){
-        this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
+        try {
+          this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
+        } catch (error) {}
       }
+
+      this.data.balance.loading = false;
+      this.data.balance.isLoaderShown = false;
     }
   }
 
-  async updateLiquidity(tokenAddress){
+  async updateLiquidity(tokenAddress, isLoaderShown){
+    this.data.liquidity.loading = true;
+    this.data.liquidity.isLoaderShown = isLoaderShown;
+
     const response = await this.tradingService.getPairLiquidity(tokenAddress, this.settings.network.chainId);
 
     const { error, weth, tokenX, tokenSymbol } = response;
@@ -115,16 +159,15 @@ export class AppComponent implements OnInit {
       console.log('Invalid token');
       this.swap.isTokenValid = false;
       this.data.liquidity.loading = false;
+      this.data.liquidity.isLoaderShown = false;
       this.data.tokenSymbol = 'tokenX';
-      // this.openSnackBar('Invalid token', 'Close');
     } else {
-      this.data.liquidity = { loading: false,  weth, tokenX };
+      this.data.liquidity = { loading: false, isLoaderShown: false,  weth, tokenX };
+      this.data.liquidity.isLoaderShown = false;
       this.data.tokenSymbol = tokenSymbol || 'tokenX';
       this.swap.isTokenValid = true;
 
-      if(this.settings.address){
-        this.data.balance.tokenX = await this.tradingService.getTokenXBalance(tokenAddress, this.settings.address);
-      }
+      this.updateBalance(false);
     }
   }
 

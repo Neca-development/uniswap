@@ -14,7 +14,6 @@ export class ProvidersService {
     return this.web3;
   }
 
-  //TODO: add network switcher
   async setProvider(network?){
     const web3 = new Web3(network? network : environment.INFURA_WSS_ROPSTEN);
     this.web3 = web3;

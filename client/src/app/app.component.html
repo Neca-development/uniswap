@@ -1,5 +1,5 @@
 <div class="main-container">
-  <app-header (changeSettings)="updateComponent()"></app-header>
+  <app-header (changeSettings)="checkSaveAction($event)" (changingNetwork)="setChangingNetwork($event)"></app-header>
 
   <div class="content">
 
@@ -18,26 +18,28 @@
         <mat-error *ngIf="!swap.isTokenValid">Invalid token address</mat-error>
       </mat-form-field>
       <div class="pair-data" *ngIf="swap.tokenAddress">
-        <p>{{data.tokenSymbol}} - ETH</p>
-        <p *ngIf="!data.liquidity.loading && swap.isTokenValid">
+        <p>{{!data.liquidity.isLoaderShown? data.tokenSymbol : 'tokenX'}} - ETH</p>
+        <p *ngIf="!data.liquidity.isLoaderShown && swap.isTokenValid">
           Liquidity: <br>
           {{data.liquidity.tokenX}} {{data.tokenSymbol}} <br>
           {{data.liquidity.weth}} ETH
         </p>
         <p *ngIf="!data.liquidity.loading && !swap.isTokenValid">Invalid token address</p>
-        <p *ngIf="data.liquidity.loading">Loading liqudity data...</p>
+        <p *ngIf="data.liquidity.isLoaderShown">Loading liqudity data...</p>
       </div>
     </div>
 
     <div class="wallet">
       <h2>Wallet balance</h2>
-      <ul *ngIf="settings.privateKey">
-        <li>{{data.balance.eth}} ETH</li>
-        <li *ngIf="swap.isTokenValid">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
-        <li *ngIf="data.liquidity.loading">Loading tokenX balance...</li>
+      <ul *ngIf="settings.privateKey && settings.address && data.isAddressValid">
+        <li *ngIf="!data.balance.isLoaderShown">{{data.balance.eth}} ETH</li>
+        <li *ngIf="!data.balance.isLoaderShown && swap.tokenAddress && swap.isTokenValid && !data.liquidity.isLoaderShown">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
+        <li *ngIf="data.balance.loading && data.balance.isLoaderShown">Loading balance...</li>
+        <li *ngIf="!data.balance.loading && data.liquidity.isLoaderShown">Loading tokenX balance...</li>
         <li *ngIf="!data.liquidity.loading && !swap.isTokenValid">Enter token address to get balance of tokenX</li>
       </ul>
-      <p *ngIf="!settings.privateKey">Enter private key in settings</p>
+      <p *ngIf="!settings.privateKey">Enter Private Key in settings</p>
+      <p *ngIf="settings.privateKey && !data.isAddressValid">Check your Private Key in settings</p>
     </div>
 
     <div class="settings">

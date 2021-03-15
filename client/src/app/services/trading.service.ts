@@ -149,7 +149,7 @@ export class TradingService {
     const account = signer.connect(provider);
 
 
-    // TODO: move out getTrage (?)
+    // IDEA: move out getTrage (?)
     const { tokenA, tokenB, trade } = await this.getTrade(inputTokenB, inputCount, chainIdInput);
 
     // TRANSACTION VALUES
@@ -174,10 +174,17 @@ export class TradingService {
 
     console.log(`Transaction hash ${tx.hash}`);
 
-    const receipt = await tx.wait();
+    try {
+      const receipt = await tx.wait();
 
-    console.log(`Transaction was mined in block ${receipt.blockNumber}`);
+      console.log(`Transaction was mined in block ${receipt.blockNumber}`);
 
-    return {hash: tx.hash, blockNumber: receipt.blockNumber};
+      return {hash: tx.hash, blockNumber: receipt.blockNumber};
+    } catch (error) {
+      console.log('Failed to execute');
+    }
+
+
+
   }
 }
