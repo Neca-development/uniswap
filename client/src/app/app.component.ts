@@ -1,14 +1,15 @@
+import { NotificationsService } from './services/notifications.service';
 import { WebsocketService } from './services/websocket.service';
 import { ProvidersService } from './services/providers.service';
 import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  providers: [NotificationsService]
 })
 export class AppComponent implements OnInit {
 
@@ -49,7 +50,7 @@ export class AppComponent implements OnInit {
     private tradingService: TradingService,
     private providersService: ProvidersService,
     private websocketService: WebsocketService,
-    private snackBar: MatSnackBar
+    private notificationsService: NotificationsService
   ){}
 
   ngOnInit(): void {
@@ -96,7 +97,7 @@ export class AppComponent implements OnInit {
 
         if(this?.subscription){
           this.subscription.unsubscribe();
-          this.openSnackBar('Swap canceled');
+          this.notificationsService.openSnackBar('Swap canceled');
           this.swap.active = false;
         }
       }
@@ -119,7 +120,7 @@ export class AppComponent implements OnInit {
         this.data.isAddressValid = true;
       } catch (error) {
         this.data.isAddressValid = false;
-        this.openSnackBar('Check your Private Key');
+        this.notificationsService.openSnackBar('Check your Private Key');
       }
     }
   }
@@ -168,12 +169,12 @@ export class AppComponent implements OnInit {
 
   async submitSwap(){
     if(!this.settings.address){
-      this.openSnackBar('Check your Private Key');
+      this.notificationsService.openSnackBar('Check your Private Key');
       return;
     }
 
     if(!this.swap.isTokenValid){
-      this.openSnackBar('Check token address');
+      this.notificationsService.openSnackBar('Check token address');
       return;
     }
 
@@ -203,7 +204,7 @@ export class AppComponent implements OnInit {
             this.data.status = `Swap executed in block ${receipt.blockNumber}`;
           } catch (error) {
             this.data.status = 'Swap failed to execute';
-            this.openSnackBar('Swap failed to execute');
+            this.notificationsService.openSnackBar('Swap failed to execute');
           }
         }
       }
@@ -212,15 +213,7 @@ export class AppComponent implements OnInit {
 
   async cancelSwap(){
     this.subscription.unsubscribe();
-    this.openSnackBar('Swap canceled by user');
+    this.notificationsService.openSnackBar('Swap canceled by user');
     this.swap.active = false;
-  }
-
-  openSnackBar(message: string, action?: string) {
-    this.snackBar.open(message, action || 'Close', {
-      duration: 0,
-      horizontalPosition: 'right',
-      verticalPosition: 'bottom'
-    });
   }
 }
