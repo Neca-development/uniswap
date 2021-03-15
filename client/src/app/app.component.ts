@@ -4,6 +4,7 @@ import { ProvidersService } from './services/providers.service';
 import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
+import { PAIR_NO_PAIR, TOKEN_NO_TOKEN } from "./errors/errors";
 
 @Component({
   selector: 'app-root',
@@ -31,6 +32,7 @@ export class AppComponent implements OnInit {
       tokenX: 0
     },
     liquidity: {
+      error: false,
       isLoaderShown: false,
       loading: false,
       weth: 0,
@@ -149,16 +151,28 @@ export class AppComponent implements OnInit {
 
     const response = await this.tradingService.getPairLiquidity(tokenAddress, this.settings.network.chainId);
 
-    const { error, weth, tokenX, tokenSymbol } = response;
+    const { errorMessage, error, weth, tokenX, tokenSymbol } = response;
 
     if(error){
-      console.log('Invalid token');
-      this.swap.isTokenValid = false;
-      this.data.liquidity.loading = false;
-      this.data.liquidity.isLoaderShown = false;
-      this.data.tokenSymbol = 'tokenX';
+      console.log(errorMessage);
+      if(errorMessage == PAIR_NO_PAIR){
+        this.data.liquidity.error = true;
+        this.swap.isTokenValid = true;
+        this.data.liquidity.loading = false;
+        this.data.liquidity.isLoaderShown = false;
+        this.data.tokenSymbol = tokenSymbol;
+
+        this.updateBalance(false);
+      } else {
+        this.data.liquidity.error = true;
+        this.swap.isTokenValid = false;
+        this.data.liquidity.loading = false;
+        this.data.liquidity.isLoaderShown = false;
+        this.data.tokenSymbol = 'tokenX';
+      }
+
     } else {
-      this.data.liquidity = { loading: false, isLoaderShown: false,  weth, tokenX };
+      this.data.liquidity = { error: false, loading: false, isLoaderShown: false,  weth, tokenX };
       this.data.liquidity.isLoaderShown = false;
       this.data.tokenSymbol = tokenSymbol || 'tokenX';
       this.swap.isTokenValid = true;
