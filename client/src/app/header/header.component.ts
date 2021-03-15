@@ -41,6 +41,7 @@ export class SettingsDialogComponent implements OnInit {
 
   ngOnInit(){
     this.settings = this.settingsService.getSettings();
+    console.log(this.settings == this.settingsService.getSettings());
   }
 
   changeHandler(field, { target }){
