@@ -7,3 +7,18 @@ export interface ISettings {
   },
   address: string
 }
+
+export interface IResponse {
+  messaga: string,
+  status: string,
+  result: any
+}
+
+export interface IGasPriceResponse extends IResponse{
+  result: {
+    FastGasPrice: string,
+    SaveGasPrice: string,
+    ProposeGasPrice: string,
+    LastBlock: string
+  }
+}

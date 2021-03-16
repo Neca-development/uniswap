@@ -74,7 +74,7 @@ export class AppComponent implements OnInit {
     }, 2000);
   }
 
-  checkSaveAction(isSaveAction = false){
+  async checkSaveAction(isSaveAction = false){
     if(isSaveAction){
       this.updateComponent();
     }
@@ -90,6 +90,10 @@ export class AppComponent implements OnInit {
 
   async changeGasTypeHandler({value}){
     this.swap.gasVariant = value == 'default'? false : true;
+
+    if(this.swap.gasVariant){
+      this.swap.gasPrice = await this.tradingService.getGasPrice(this.settings.network.chainId) / 10 ** 9 + '';
+    }
   }
 
   async updateComponent(){
@@ -98,6 +102,7 @@ export class AppComponent implements OnInit {
 
       if(newSettings.network.chainId !== this.settings.network.chainId){
         this.swap.tokenAddress = '';
+        this.swap.gasVariant = false;
         this.data.isSwapWas = false;
 
         if(this?.subscription){
@@ -215,7 +220,8 @@ export class AppComponent implements OnInit {
               this.swap.tokenAmount,
               this.settings.address,
               this.settings.privateKey,
-              this.settings.network.chainId
+              this.settings.network.chainId,
+              !this.swap.gasVariant ? 0 : +this.swap.gasPrice
             );
             console.log(receipt);
             this.data.status = `

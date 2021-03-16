@@ -62,8 +62,8 @@
       <div class="mb-1">
         <mat-label>Gas price method</mat-label>
         <mat-button-toggle-group name="gasSettings" class="fluid settings-price" aria-label="Gas Settings" (change)="changeGasTypeHandler($event)">
-          <mat-button-toggle value="default" checked>By default</mat-button-toggle>
-          <mat-button-toggle value="manual">Manual</mat-button-toggle>
+          <mat-button-toggle value="default" [checked]="!swap.gasVariant">By default</mat-button-toggle>
+          <mat-button-toggle value="manual" [checked]="swap.gasVariant">Manual</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
 
