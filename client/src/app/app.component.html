@@ -96,7 +96,9 @@
       <p *ngIf="!swap.active">Nothing to display</p>
 
       <ul>
-        <li>Swap status: {{swap.active && data.status ? data.status : 'Submit swap'}}</li>
+        <li>Swap status:
+          <p>{{swap.active || data.isSwapWas && data.status ? data.status : 'Submit swap'}}</p>
+        </li>
         <li>Block №: {{data.currentBlock}}</li>
         <li>Network status: {{settings.network.name}}</li>
       </ul>

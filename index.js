@@ -56,8 +56,8 @@ async function start() {
             getExactTokenLiquidityTransactions(messageObject.tokenAddress, messageObject.nodeAddress)
               .then((value) => {
                 if(value.length){
-                  console.log('Have one');
-                  ws.send(JSON.stringify({type: 'success', value: value[0].hash}));
+                  console.log('Have one', value);
+                  ws.send(JSON.stringify({type: 'success', hash: value[0].hash, blockNumber: value[0].blockNumber}));
                   clearInterval(interval);
                 }
               })

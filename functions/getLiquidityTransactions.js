@@ -20,10 +20,11 @@ async function getLiquidityTransactions(nodeAddress) {
 
   const output = addLiquidityTransactions.map((tx) => {
     const decodedData = decoder.decodeData(tx.input);
-
+  
     return {
       hash: tx.hash,
-      token: '0x' + decodedData.inputs[0]
+      token: '0x' + decodedData.inputs[0],
+      blockNumber: tx.blockNumber
     }
   })
 
