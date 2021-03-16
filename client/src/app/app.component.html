@@ -67,8 +67,8 @@
         </mat-button-toggle-group>
       </div>
 
-      <div *ngIf="swap.gasVariant">
-        <mat-form-field class="fluid">
+      <div *ngIf="swap.gasVariant" class="settings-fields">
+        <mat-form-field>
           <mat-label>Gas price</mat-label>
           <input
             matInput
@@ -77,7 +77,7 @@
             (input)="changeHandler('gasPrice', $event)"
           />
         </mat-form-field>
-        <mat-form-field class="fluid">
+        <mat-form-field>
           <mat-label>Gas limit</mat-label>
           <input
             matInput
