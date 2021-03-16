@@ -28,7 +28,7 @@
         <p *ngIf="!data.liquidity.loading && !swap.isTokenValid">Invalid token address</p>
         <p *ngIf="data.liquidity.isLoaderShown">Loading liqudity data...</p>
       </div>
-      <p *ngIf="!data.isNetworkValid">Check your node address in settings</p>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
     </div>
 
     <div class="wallet">
@@ -42,7 +42,7 @@
       </ul>
       <p *ngIf="!settings.privateKey">Enter Private Key in settings</p>
       <p *ngIf="settings.privateKey && !data.isAddressValid && data.isNetworkValid">Check your Private Key in settings</p>
-      <p *ngIf="!data.isNetworkValid">Check your node address in settings</p>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
     </div>
 
     <div class="settings">
@@ -115,7 +115,7 @@
         <li>Network status: {{settings.network.name}}</li>
       </ul>
 
-      <p *ngIf="!data.isNetworkValid">Check your node address in settings</p>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
     </div>
 
   </div>
