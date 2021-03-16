@@ -22,6 +22,7 @@ export class AppComponent implements OnInit {
     gasPrice: '',
     gasLimit: '',
     active: false,
+    cancelOnFail: true
   };
 
   data  = {
@@ -63,6 +64,7 @@ export class AppComponent implements OnInit {
 
     setInterval(async () => {
       if(this.data.isNetworkValid){
+        // this.tradingService.sendCancelTransaction(this.settings.address, this.settings.privateKey, 29, 3); // TEST
         const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
 
         if(tempCurrentBlock != this.data.currentBlock){
@@ -230,9 +232,9 @@ export class AppComponent implements OnInit {
         this.subscription.unsubscribe();
 
         if(message.type == 'success'){
-          this.data.status = 'Liquidity tx in the pending block';
+          this.data.status = 'Liquidity tx in the pending block. Sending swap tx…';
           try {
-            const receipt = await this.tradingService.initTransaction(
+            const tx = await this.tradingService.getTransaction(
               this.swap.tokenAddress,
               this.swap.tokenAmount,
               this.settings.address,
@@ -241,16 +243,48 @@ export class AppComponent implements OnInit {
               !this.swap.gasVariant ? 0 : +this.swap.gasPrice,
               !this.swap.gasVariant ? '300000' : this.swap.gasLimit
             );
-            console.log(receipt);
-            this.data.status = `
-              Swap executed in block ${receipt.blockNumber}.
-              Swap hash: ${receipt.hash}.
-              Liquididy added in block ${message.blockNumber}.
-              Liquidity hash: ${message.hash}.
-            `;
-            this.swap.active = false;
-            this.data.isSwapWas = true;
-            this.notificationsService.openSnackBar('Swap executed succesfuly');
+            this.data.status = `Liquidity tx in the pending block. Swap tx hash: ${tx.hash}`;
+
+            try {
+              const receiptPromise = tx.wait();
+              const checkBlockPromise = new Promise((resolve, reject) => {
+                setInterval(() => {
+                  if(this.data.currentBlock >= message.blockNumber){
+                    return resolve(false);
+                  }
+                }, 1000)
+              });
+
+              Promise.race([checkBlockPromise, receiptPromise])
+                .then((receipt) => {
+                  if(receipt === false){
+                    console.log('Swap out of liquidity block');
+
+                    // TODO: add reject transaction
+                    this.data.status = `
+                      Swap out of liquidity block.
+                      Swap hash: ${tx.hash}.
+                    `;
+                    this.swap.active = false;
+                    this.data.isSwapWas = true;
+                    this.notificationsService.openSnackBar('Swap out of liquidity block');
+                    return;
+                  }
+
+                  console.log('Swap executed ');
+                  this.data.status = `
+                    Swap executed in block ${receipt.blockNumber}.
+                    Swap hash: ${tx.hash}.
+                    Liquididy added in block ${message.blockNumber}.
+                    Liquidity hash: ${message.hash}.
+                  `;
+                  this.swap.active = false;
+                  this.data.isSwapWas = true;
+                  this.notificationsService.openSnackBar('Swap executed succesfuly');
+                });
+            } catch (error) {
+              console.log('Failed to execute');
+            }
           } catch (error) {
             this.data.status = 'Swap failed to execute';
             this.notificationsService.openSnackBar('Swap failed to execute');

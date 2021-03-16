@@ -91,6 +91,7 @@
       </div>
 
       <div class="settings-submit" >
+        <mat-checkbox [checked]="swap.cancelOnFail">Auto cancel</mat-checkbox>
         <button mat-raised-button color="primary" (click)="submitSwap()" *ngIf="!swap.active">Submit</button>
         <button mat-raised-button color="warn" (click)="cancelSwap()" *ngIf="swap.active">Cancel</button>
       </div>
