@@ -3,6 +3,7 @@ import { ProvidersService } from './../services/providers.service';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { SettingsService } from './../services/settings.service';
+import { environment } from './../../environments/environment';
 
 @Component({
   selector: 'app-header',

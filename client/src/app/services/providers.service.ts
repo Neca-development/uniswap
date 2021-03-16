@@ -14,8 +14,8 @@ export class ProvidersService {
     return this.web3;
   }
 
-  async setProvider(network?){
-    const web3 = new Web3(network? network : environment.INFURA_WSS_ROPSTEN);
+  async setProvider(network){
+    const web3 = new Web3(network);
     this.web3 = web3;
   }
 
