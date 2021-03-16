@@ -56,12 +56,21 @@ ul{
 
   &-submit{
     display: flex;
-    justify-content:flex-end;
+    justify-content: space-between;
+    gap: 8%;
+
+    & mat-checkbox{
+      width: 46%;
+      align-self: center;
+    }
 
     & button{
-      flex-basis: 50%;
+      width: 46%;
     }
   }
 }
 
+.active-settings{
+  overflow-y: auto;
+}
 
