@@ -178,7 +178,7 @@ export class TradingService {
     return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
   }
 
-  async initTransaction(
+  async getTransaction(
     inputTokenB,
     inputCount,
     walletAddress,
@@ -219,19 +219,35 @@ export class TradingService {
     // TRANSACTION INIT
     const tx = await uniswap.swapExactETHForTokens(amountOutMin, path, to, deadline, {value, gasPrice, gasLimit});
 
-    console.log(`Transaction hash ${tx.hash}`);
+    console.log(`Transaction hash ${tx.hash}`, tx);
 
-    try {
-      const receipt = await tx.wait();
+    return tx;
+  }
 
-      console.log(`Transaction was mined in block ${receipt.blockNumber}`);
+  async sendCancelTransaction(
+    walletAddress,
+    privateKey,
+    inputNonce,
+    inputChainId,
+    inputGasPrice = 0,
+  ){
+    const web3 = this.providersService.getProvider();
+    const provider = this.providersService.getEthersProvider(inputChainId);
 
-      return {hash: tx.hash, blockNumber: receipt.blockNumber};
-    } catch (error) {
-      console.log('Failed to execute');
+    const nonce = web3.utils.toHex((inputNonce).toString());
+    const gasPrice = web3.utils.toHex((inputGasPrice * 10**9 * 110 / 100).toString());
+
+    const transactionObject = {
+      from: walletAddress,
+      to: walletAddress,
+      gasPrice,
+      nonce,
+      value: '0x00',
     }
 
-
+    const signer = new ethers.Wallet(privateKey, provider);
+    const response = await signer.sendTransaction( transactionObject );
+    console.log(response);
 
   }
 }
