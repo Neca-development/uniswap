@@ -4,6 +4,7 @@ import { Fetcher, WETH, Route, Trade, TokenAmount, Percent, TradeType } from '@u
 import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
 import { SettingsService } from './settings.service';
+import { PAIR_NO_PAIR, TOKEN_NO_TOKEN } from "./../errors/errors";
 
 @Injectable({
   providedIn: 'root'
@@ -86,7 +87,7 @@ export class TradingService {
       const tokenB = await Fetcher.fetchTokenData(chainId, tokenChecksummedAddress);
       return tokenB
     } catch (error) {
-      return false
+      throw new Error(TOKEN_NO_TOKEN);
     }
   }
 
@@ -94,33 +95,45 @@ export class TradingService {
     const web3 = this.providersService.getProvider();
     const chainId = chainIdInput;
 
-    const tokenB = await this.getToken(tokenAddress, chainId);
+    try {
+      const tokenB = await this.getToken(tokenAddress, chainId);
 
-    if(!tokenB){
+      try {
+        const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
+
+        const tokenABI = require('../../assets/abi-token.json');
+
+        async function getTokenAmountByAddress(tokenAddress, token = WETH[chainId]){
+          const contract = new web3.eth.Contract(tokenABI, tokenAddress);
+          const balance = await contract.methods.balanceOf(pair.liquidityToken.address).call();
+          const decimals = await contract.methods.decimals().call();
+          return balance/10**decimals;
+        }
+
+        return {
+          error: false,
+          pairAddress: pair.liquidityToken.address,
+          weth: await getTokenAmountByAddress(WETH[chainId].address),
+          tokenX: await getTokenAmountByAddress(tokenAddress, tokenB),
+          tokenSymbol: await this.getTokenXSymbol(tokenAddress)
+        }
+      } catch (error) {
+        return {
+          errorMessage: PAIR_NO_PAIR,
+          tokenSymbol: await this.getTokenXSymbol(tokenAddress),
+          error: true,
+          weth: 0,
+          tokenX: 0
+        }
+      }
+
+    } catch (error) {
       return {
+        errorMessage: error,
         error: true,
         weth: 0,
         tokenX: 0
-      };
-    }
-
-    const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
-
-    const tokenABI = require('../../assets/abi-token.json');
-
-    async function getTokenAmountByAddress(tokenAddress, token = WETH[chainId]){
-      const contract = new web3.eth.Contract(tokenABI, tokenAddress);
-      const balance = await contract.methods.balanceOf(pair.liquidityToken.address).call();
-      const decimals = await contract.methods.decimals().call();
-      return balance/10**decimals;
-    }
-
-    return {
-      error: false,
-      pairAddress: pair.liquidityToken.address,
-      weth: await getTokenAmountByAddress(WETH[chainId].address),
-      tokenX: await getTokenAmountByAddress(tokenAddress, tokenB),
-      tokenSymbol: await this.getTokenXSymbol(tokenAddress)
+      }
     }
   }
 
