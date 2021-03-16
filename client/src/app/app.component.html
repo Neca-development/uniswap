@@ -99,6 +99,7 @@
 
       <ul *ngIf="swap.active">
         <li>Gas price: {{!swap.gasVariant? 'by default' : swap.gasPrice || 0}}</li>
+        <li>Gas limit: {{!swap.gasLimit? '300000' : swap.gasLimit || 0}}</li>
         <li>ETH to swap: {{swap.tokenAmount}} ETH</li>
         <li>Token to buy: {{data.tokenSymbol || 'tokenX'}}</li>
       </ul>
