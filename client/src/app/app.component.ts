@@ -4,7 +4,7 @@ import { ProvidersService } from './services/providers.service';
 import { TradingService } from './services/trading.service';
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from './services/settings.service';
-import { PAIR_NO_PAIR, TOKEN_NO_TOKEN } from "./errors/errors";
+import { PAIR_NO_PAIR } from "./errors/errors";
 
 @Component({
   selector: 'app-root',
@@ -60,16 +60,18 @@ export class AppComponent implements OnInit {
     this.updateComponent();
 
     setInterval(async () => {
-      this.data.currentBlock = await this.tradingService.getCurrentBlockNumber();
+      const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
 
-      this.updateBalance(false);
-    }, 2000);
+      if(tempCurrentBlock != this.data.currentBlock){
+        this.data.currentBlock = tempCurrentBlock;
 
-    setInterval(async () => {
-      if(this.swap.tokenAddress && this.swap.isTokenValid){
-        this.updateLiquidity(this.swap.tokenAddress, false);
+        if(this.swap.tokenAddress && this.swap.isTokenValid){
+          this.updateLiquidity(this.swap.tokenAddress, false);
+        }
+
+        this.updateBalance(false);
       }
-    }, 10000)
+    }, 2000);
   }
 
   checkSaveAction(isSaveAction = false){
