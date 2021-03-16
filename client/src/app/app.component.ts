@@ -20,6 +20,7 @@ export class AppComponent implements OnInit {
     tokenAmount: '0.01',
     gasVariant: false,
     gasPrice: '',
+    gasLimit: '',
     active: false,
   };
 
