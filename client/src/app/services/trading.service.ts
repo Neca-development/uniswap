@@ -178,7 +178,17 @@ export class TradingService {
     return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
   }
 
-  async initTransaction(inputTokenB, inputCount, walletAddress, privateKey, chainIdInput, inputGasPrice = 0, inputSlippage = 0.5, inputDeadline = 20){
+  async initTransaction(
+    inputTokenB,
+    inputCount,
+    walletAddress,
+    privateKey,
+    chainIdInput,
+    inputGasPrice = 0,
+    inputGasLimit = '300000',
+    inputSlippage = 0.5,
+    inputDeadline = 20
+  ){
     const web3 = this.providersService.getProvider();
     const provider = this.providersService.getEthersProvider(chainIdInput);
 
@@ -198,7 +208,7 @@ export class TradingService {
     const deadline = Math.floor(Date.now() / 1000) + 60 * inputDeadline;
     const value = web3.utils.numberToHex(trade.inputAmount.raw.toString());
 
-    const gasLimit = web3.utils.numberToHex('300000');
+    const gasLimit = web3.utils.numberToHex(inputGasLimit);
     const gasPrice = web3.utils.numberToHex((await this.getGasPrice(chainIdInput, inputGasPrice)).toString());
 
     // CONTRACT INIT (we may add other contracts)

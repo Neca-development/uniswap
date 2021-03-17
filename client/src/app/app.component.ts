@@ -20,6 +20,7 @@ export class AppComponent implements OnInit {
     tokenAmount: '0.01',
     gasVariant: false,
     gasPrice: '',
+    gasLimit: '',
     active: false,
   };
 
@@ -221,7 +222,8 @@ export class AppComponent implements OnInit {
               this.settings.address,
               this.settings.privateKey,
               this.settings.network.chainId,
-              !this.swap.gasVariant ? 0 : +this.swap.gasPrice
+              !this.swap.gasVariant ? 0 : +this.swap.gasPrice,
+              !this.swap.gasVariant ? '300000' : this.swap.gasLimit
             );
             console.log(receipt);
             this.data.status = `

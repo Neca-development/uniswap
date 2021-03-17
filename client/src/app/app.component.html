@@ -60,7 +60,7 @@
       </div>
 
       <div class="mb-1">
-        <mat-label>Gas price method</mat-label>
+        <mat-label>Gas settings</mat-label>
         <mat-button-toggle-group name="gasSettings" class="fluid settings-price" aria-label="Gas Settings" (change)="changeGasTypeHandler($event)">
           <mat-button-toggle value="default" [checked]="!swap.gasVariant">By default</mat-button-toggle>
           <mat-button-toggle value="manual" [checked]="swap.gasVariant">Manual</mat-button-toggle>
@@ -77,6 +77,15 @@
             (input)="changeHandler('gasPrice', $event)"
           />
         </mat-form-field>
+        <mat-form-field class="fluid">
+          <mat-label>Gas limit</mat-label>
+          <input
+            matInput
+            placeholder="Enter gas limit"
+            [value]="0"
+            (input)="changeHandler('gasLimit', $event)"
+          />
+        </mat-form-field>
       </div>
 
       <div class="settings-submit" >
@@ -90,6 +99,7 @@
 
       <ul *ngIf="swap.active">
         <li>Gas price: {{!swap.gasVariant? 'by default' : swap.gasPrice || 0}}</li>
+        <li>Gas limit: {{!swap.gasLimit? '300000' : swap.gasLimit || 0}}</li>
         <li>ETH to swap: {{swap.tokenAmount}} ETH</li>
         <li>Token to buy: {{data.tokenSymbol || 'tokenX'}}</li>
       </ul>

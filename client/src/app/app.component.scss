@@ -21,9 +21,9 @@ ul{
 
 .content{
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 0.6fr 1fr;
-  gap: 0px 4rem;
+  grid-template-columns: 46% 46%;
+  grid-template-rows: 180px 1fr;
+  gap: 0px 8%;
 }
 
 .pair{
