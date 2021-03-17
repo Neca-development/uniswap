@@ -43,6 +43,7 @@ export class AppComponent implements OnInit {
     status: 'waiting for liquidity',
     isAddressValid: false,
     isNetworkChanging: false,
+    isNetworkValid: true,
     isSwapWas: false
   };
 
@@ -61,16 +62,18 @@ export class AppComponent implements OnInit {
     this.updateComponent();
 
     setInterval(async () => {
-      const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
+      if(this.data.isNetworkValid){
+        const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
 
-      if(tempCurrentBlock != this.data.currentBlock){
-        this.data.currentBlock = tempCurrentBlock;
+        if(tempCurrentBlock != this.data.currentBlock){
+          this.data.currentBlock = tempCurrentBlock;
 
-        if(this.swap.tokenAddress && this.swap.isTokenValid){
-          this.updateLiquidity(this.swap.tokenAddress, false);
+          if(this.swap.tokenAddress && this.swap.isTokenValid){
+            this.updateLiquidity(this.swap.tokenAddress, false);
+          }
+
+          this.updateBalance(false);
         }
-
-        this.updateBalance(false);
       }
     }, 2000);
   }
@@ -101,6 +104,14 @@ export class AppComponent implements OnInit {
     if(this.settings){
       const newSettings = this.settingsService.getSettings();
 
+      if(!newSettings.network.nodeAddress){
+        this.data.isAddressValid = false;
+        this.data.isNetworkValid = false;
+        return;
+      }
+
+      this.data.isNetworkValid = true;
+
       if(newSettings.network.chainId !== this.settings.network.chainId){
         this.swap.tokenAddress = '';
         this.swap.gasVariant = false;
@@ -116,6 +127,11 @@ export class AppComponent implements OnInit {
       this.settings = newSettings;
     } else {
       this.settings = this.settingsService.getSettings();
+
+      if(!this.settings.network.nodeAddress){
+        this.data.isNetworkValid = false;
+        return;
+      }
     }
 
     this.providersService.setProvider(this.settings.network.nodeAddress);

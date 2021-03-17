@@ -38,9 +38,19 @@ ul{
 }
 
 .settings{
+  &-fields{
+    max-width: 100%;
+    display: flex;
+    gap: 8%;
+    & > mat-form-field{
+      width: 46%;
+    }
+  }
+
   &-price{
     & > mat-button-toggle{
-      flex-grow: 1;
+      box-sizing: border-box;
+      width: 50%;
     }
   }
 

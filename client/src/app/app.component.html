@@ -17,7 +17,7 @@
         <!-- Error working wrong -->
         <mat-error *ngIf="!swap.isTokenValid">Invalid token address</mat-error>
       </mat-form-field>
-      <div class="pair-data" *ngIf="swap.tokenAddress">
+      <div class="pair-data" *ngIf="swap.tokenAddress && data.isNetworkValid">
         <p>{{!data.liquidity.isLoaderShown? data.tokenSymbol : 'tokenX'}} - ETH</p>
         <p *ngIf="!data.liquidity.isLoaderShown && swap.isTokenValid && !data.liquidity.error">
           Liquidity: <br>
@@ -28,6 +28,7 @@
         <p *ngIf="!data.liquidity.loading && !swap.isTokenValid">Invalid token address</p>
         <p *ngIf="data.liquidity.isLoaderShown">Loading liqudity data...</p>
       </div>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
     </div>
 
     <div class="wallet">
@@ -40,7 +41,8 @@
         <li *ngIf="!data.liquidity.loading && !swap.isTokenValid">Enter token address to get balance of tokenX</li>
       </ul>
       <p *ngIf="!settings.privateKey">Enter Private Key in settings</p>
-      <p *ngIf="settings.privateKey && !data.isAddressValid">Check your Private Key in settings</p>
+      <p *ngIf="settings.privateKey && !data.isAddressValid && data.isNetworkValid">Check your Private Key in settings</p>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
     </div>
 
     <div class="settings">
@@ -67,8 +69,8 @@
         </mat-button-toggle-group>
       </div>
 
-      <div *ngIf="swap.gasVariant">
-        <mat-form-field class="fluid">
+      <div *ngIf="swap.gasVariant" class="settings-fields">
+        <mat-form-field>
           <mat-label>Gas price</mat-label>
           <input
             matInput
@@ -77,7 +79,7 @@
             (input)="changeHandler('gasPrice', $event)"
           />
         </mat-form-field>
-        <mat-form-field class="fluid">
+        <mat-form-field>
           <mat-label>Gas limit</mat-label>
           <input
             matInput
@@ -105,13 +107,15 @@
       </ul>
       <p *ngIf="!swap.active">Nothing to display</p>
 
-      <ul>
+      <ul *ngIf="data.isNetworkValid">
         <li>Swap status:
           <p>{{swap.active || data.isSwapWas && data.status ? data.status : 'Submit swap'}}</p>
         </li>
         <li>Block №: {{data.currentBlock}}</li>
         <li>Network status: {{settings.network.name}}</li>
       </ul>
+
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
     </div>
 
   </div>
