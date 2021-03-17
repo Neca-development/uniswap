@@ -15,8 +15,7 @@ export class ProvidersService {
   }
 
   async setProvider(network){
-    const web3 = new Web3(network);
-    this.web3 = web3;
+    this.web3 = new Web3(network);
   }
 
   async getChainId(network){
