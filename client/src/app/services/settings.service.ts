@@ -18,10 +18,10 @@ export class SettingsService {
   }
 
   getSettings(){
-    const loaclStorageSettings = localStorage.getItem('settings');
+    const localStorageSettings = localStorage.getItem('settings');
 
-    if(loaclStorageSettings){
-      this._settingsStorage = JSON.parse(loaclStorageSettings);
+    if(localStorageSettings){
+      this._settingsStorage = JSON.parse(localStorageSettings);
     }
 
     return cloneDeep(this._settingsStorage);
