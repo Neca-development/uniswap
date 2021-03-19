@@ -91,7 +91,7 @@
       </div>
 
       <div class="settings-submit" >
-        <mat-checkbox [checked]="swap.cancelOnFail">Auto cancel</mat-checkbox>
+        <mat-checkbox [checked]="swap.cancelOnFail" (change)="swap.cancelOnFail = !swap.cancelOnFail">Auto cancel</mat-checkbox>
         <button mat-raised-button color="primary" (click)="submitSwap()" *ngIf="!swap.active">Submit</button>
         <button mat-raised-button color="warn" (click)="cancelSwap()" *ngIf="swap.active">Cancel</button>
       </div>
@@ -105,6 +105,7 @@
         <li>Gas limit: {{!swap.gasLimit? '300000' : swap.gasLimit || 0}}</li>
         <li>ETH to swap: {{swap.tokenAmount}} ETH</li>
         <li>Token to buy: {{data.tokenSymbol || 'tokenX'}}</li>
+        <li>Emergency cancellation: {{swap.cancelOnFail ? 'enabled' : 'disabled'}}</li>
       </ul>
       <p *ngIf="!swap.active">Nothing to display</p>
 

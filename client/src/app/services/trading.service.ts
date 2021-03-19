@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
 import { SettingsService } from './settings.service';
 import { PAIR_NO_PAIR, TOKEN_NO_TOKEN } from "./../errors/errors";
+import { Tx, Buffer } from "./../../assets/ethereumjs-tx-1.3.3.min.js";
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,20 @@ export class TradingService {
     private providersService: ProvidersService,
     private apiService: ApiService
   ){}
+
+  watchPending(){ // TEST
+    const web3 = this.providersService.getProvider();
+
+    // web3.eth.subscribe('pendingTransactions', (err, res) => {
+    //   if (err){
+    //     console.error(err);
+    //   } else {
+    //     console.log(res);
+    //   }
+    // });
+
+    web3.eth.getPendingTransactions().then(val => console.log(val))
+  }
 
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
@@ -94,7 +109,7 @@ export class TradingService {
   }
 
   getAccount(privateKey, chainIdInput){
-    const provider = this.providersService.getEthersProvider(chainIdInput);
+    const provider = this.providersService.getEthersProvider();
 
     const signer = new ethers.Wallet(privateKey);
     const account = signer.connect(provider);
@@ -178,7 +193,7 @@ export class TradingService {
     return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
   }
 
-  async getTransaction(
+  async initTransaction(
     inputTokenB,
     inputCount,
     walletAddress,
@@ -186,15 +201,14 @@ export class TradingService {
     chainIdInput,
     inputGasPrice = 0,
     inputGasLimit = '300000',
-    inputSlippage = 0.5,
+    inputSlippage = 1000,
     inputDeadline = 20
   ){
     const web3 = this.providersService.getProvider();
-    const provider = this.providersService.getEthersProvider(chainIdInput);
+    const provider = this.providersService.getEthersProvider();
 
     const signer = new ethers.Wallet(privateKey, provider);
     const account = signer.connect(provider);
-
 
     // IDEA: move out getTrage (?)
     const { tokenA, tokenB, trade } = await this.getTrade(inputTokenB, inputCount, chainIdInput);
@@ -207,6 +221,7 @@ export class TradingService {
     const to = walletAddress;
     const deadline = Math.floor(Date.now() / 1000) + 60 * inputDeadline;
     const value = web3.utils.numberToHex(trade.inputAmount.raw.toString());
+    const nonce = await web3.eth.getTransactionCount(account.address);
 
     const gasLimit = web3.utils.numberToHex(inputGasLimit);
     const gasPrice = web3.utils.numberToHex((await this.getGasPrice(chainIdInput, inputGasPrice)).toString());
@@ -217,37 +232,82 @@ export class TradingService {
     ], account);
 
     // TRANSACTION INIT
-    const tx = await uniswap.swapExactETHForTokens(amountOutMin, path, to, deadline, {value, gasPrice, gasLimit});
+    try {
+      // README: web3js sealization of send transaction
+      // const web3uni = new web3.eth.Contract([
+      //   {"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"}
+      // ], environment.ROUTER_ADDRESS);
 
-    console.log(`Transaction hash ${tx.hash}`, tx);
+      // const encodedAbi = web3uni.methods.swapExactETHForTokens(amountOutMin, path, to, deadline).encodeABI();
 
-    return tx;
+      // const transactionObject = {
+      //   chainId: chainIdInput,
+      //   from: walletAddress,
+      //   to: environment.ROUTER_ADDRESS,
+      //   gasPrice,
+      //   gasLimit,
+      //   nonce,
+      //   value,
+      //   data: encodedAbi
+      // }
+
+      // const sendRawTransaction = (txData) => {
+      //   const transaction = new Tx(txData);
+      //   transaction.sign(new Buffer.Buffer.from(account.privateKey.slice(2), 'hex'));
+      //   const serializedTx = transaction.serialize().toString('hex');
+      //   return web3.eth.sendSignedTransaction('0x' + serializedTx);
+      // }
+
+      // sendRawTransaction(transactionObject)
+      // .on('transactionHash', (txHsh) => console.log(txHsh))
+      // .on('receipt', (receipt) => receipt)
+      // .on('error', (err) => err);
+
+      let tx = await uniswap.swapExactETHForTokens(amountOutMin, path, to, deadline, {nonce, value, gasPrice, gasLimit});
+      console.log(`Transaction hash ${tx.hash}`, tx);
+
+      return tx;
+    } catch (error) {
+      console.log(error);
+
+      throw new Error(error);
+    }
   }
 
   async sendCancelTransaction(
-    walletAddress,
-    privateKey,
+    inputPrivateKey,
     inputNonce,
     inputChainId,
     inputGasPrice = 0,
   ){
     const web3 = this.providersService.getProvider();
-    const provider = this.providersService.getEthersProvider(inputChainId);
+    const provider = this.providersService.getEthersProvider();
+
+    const signer = new ethers.Wallet(inputPrivateKey, provider);
+    const account = signer.connect(provider);
 
     const nonce = web3.utils.toHex((inputNonce).toString());
-    const gasPrice = web3.utils.toHex((inputGasPrice * 10**9 * 110 / 100).toString());
+    const gasPrice = web3.utils.toHex((inputGasPrice * 110 / 100).toString());
+    const privateKey = new Buffer.Buffer.from(account.privateKey.slice(2), 'hex');
 
     const transactionObject = {
-      from: walletAddress,
-      to: walletAddress,
+      chainId: inputChainId,
+      from: account.address,
+      to: account.address,
       gasPrice,
-      nonce,
-      value: '0x00',
+      gasLimit: 100000,
+      value: 0,
+      nonce
+    }
+    console.log(transactionObject);
+
+    const sendRawTransaction = async (txData) => {
+      const transaction = new Tx(txData);
+      transaction.sign(privateKey);
+      const serializedTx = transaction.serialize().toString('hex');
+      return await web3.eth.sendSignedTransaction('0x' + serializedTx);
     }
 
-    const signer = new ethers.Wallet(privateKey, provider);
-    const response = await signer.sendTransaction( transactionObject );
-    console.log(response);
-
+    return sendRawTransaction(transactionObject);
   }
 }
