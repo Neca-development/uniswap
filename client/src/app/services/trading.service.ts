@@ -21,20 +21,6 @@ export class TradingService {
     private apiService: ApiService
   ){}
 
-  watchPending(){ // TEST
-    const web3 = this.providersService.getProvider();
-
-    // web3.eth.subscribe('pendingTransactions', (err, res) => {
-    //   if (err){
-    //     console.error(err);
-    //   } else {
-    //     console.log(res);
-    //   }
-    // });
-
-    web3.eth.getPendingTransactions().then(val => console.log(val))
-  }
-
   getCountWithDecimals(count, decimal){
     const trueAmount = count * 10 ** decimal;
     return ''+trueAmount;
