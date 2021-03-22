@@ -113,6 +113,8 @@ export class AppComponent implements OnInit {
       if(!newSettings.network.nodeAddress){
         this.data.isAddressValid = false;
         this.data.isNetworkValid = false;
+        this.swap.tokenAddress = '';
+        this.cancelSwap();
         return;
       }
 
@@ -123,7 +125,7 @@ export class AppComponent implements OnInit {
         this.swap.gasVariant = false;
         this.data.isSwapWas = false;
 
-        if(this?.liquiditySubscription){
+        if(this?.liquiditySubscription && this.swap.active){
           this.liquiditySubscription.unsubscribe();
           this.notificationsService.openSnackBar('Swap canceled');
           this.swap.active = false;
