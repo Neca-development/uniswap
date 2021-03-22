@@ -291,7 +291,7 @@ export class TradingService {
       const transaction = new Tx(txData);
       transaction.sign(privateKey);
       const serializedTx = transaction.serialize().toString('hex');
-      return await web3.eth.sendSignedTransaction('0x' + serializedTx);
+      return await web3.eth.sendSignedTransaction('0x' + serializedTx).on('transactionHash', console.log);
     }
 
     return sendRawTransaction(transactionObject);

@@ -8,9 +8,10 @@ const hostServer = express();
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
 const WebSocket = require("ws");
-const getCurrentBlockTransacrions = require('./functions/getCurrentBlockTransacrions');
+const getBlockTransacrions = require('./functions/getBlockTransacrions');
 const getPendingSubscription = require('./functions/getPendingSubscription');
 const getDataIfLiquidityTransaction = require('./functions/getDataIfLiquidityTransaction');
+const getCurrentBlockSubscription = require('./functions/getCurrentBlockSubscription');
 
 const PORT = process.env.PORT || 3000;
 
@@ -71,53 +72,49 @@ async function start() {
 
         case "subscribeSwap":
           console.log(m);
-          let swapInterval = setInterval( async () => {
-            const { nodeAddress, swapHash, liquidityHash } = messageObject;
+          const { nodeAddress, swapHash, liquidityHash } = messageObject;
 
-            getCurrentBlockTransacrions(nodeAddress)
-              .then((transactions) => {
-                let liquidityTx, swapTx = null;
+          getCurrentBlockSubscription(nodeAddress)
+            .on("data", ({number}) => {
+              getBlockTransacrions(nodeAddress, number)
+                .then((transactions) => {
+                  let liquidityTx, swapTx = null;
 
-                swapTx = transactions.find((tx) => tx.hash == swapHash);
-                liquidityTx = transactions.find((tx) => tx.hash == liquidityHash);
+                  swapTx = transactions.find((tx) => tx.hash == swapHash);
+                  liquidityTx = transactions.find((tx) => tx.hash == liquidityHash);
 
-                if(swapTx && liquidityTx){
-                  console.log('Have one', { liquidityTx, swapTx });
-                  ws.send(JSON.stringify({type: 'success', blockNumber: swapTx.blockNumber }));
-                  clearInterval(swapInterval);
-                  return;
-                }
+                  if(swapTx && liquidityTx){
+                    console.log('Have one', { liquidityTx, swapTx });
+                    ws.send(JSON.stringify({type: 'success', blockNumber: swapTx.blockNumber }));
+                    return;
+                  }
 
-                if(liquidityTx && !swapTx){
-                  console.log('Out of liquidity', { liquidityTx });
-                  ws.send(JSON.stringify({
-                    type: 'fail',
-                    message: 'Out of liquidity block',
-                    blockNumber: liquidityTx.blockNumber
-                  }));
-                  clearInterval(swapInterval);
-                  return;
-                }
+                  if(liquidityTx && !swapTx){
+                    console.log('Out of liquidity', { liquidityTx });
+                    ws.send(JSON.stringify({
+                      type: 'fail',
+                      message: 'Out of liquidity block',
+                      blockNumber: liquidityTx.blockNumber
+                    }));
+                    return;
+                  }
 
-                if(!liquidityTx && swapTx){
-                  console.log('Swap failed', { swapTx });
-                  ws.send(JSON.stringify({
-                    type: 'fail',
-                    message: 'Swap failed',
-                    blockNumber: swapTx.blockNumber
-                  }));
-                  clearInterval(swapInterval);
-                  return;
-                }
-              })
-              .catch((error) => {
-                ws.send(JSON.stringify({type: 'error', value: error}));
-                clearInterval(swapInterval);
-              })
-          }, 600);
+                  if(!liquidityTx && swapTx){
+                    console.log('Swap failed', { swapTx });
+                    ws.send(JSON.stringify({
+                      type: 'fail',
+                      message: 'Swap failed',
+                      blockNumber: swapTx.blockNumber
+                    }));
+                    return;
+                  }
+                })
+                .catch((error) => {
+                  ws.send(JSON.stringify({type: 'error', value: error}));
+                })
+            })
       }
     });
-
     ws.on("error", e => ws.send(e));
   });
   server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
