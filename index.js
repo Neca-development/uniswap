@@ -8,8 +8,9 @@ const hostServer = express();
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
 const WebSocket = require("ws");
-const getExactTokenLiquidityTransactions = require('./functions/getExactTokenLiquidityTransactions');
 const getCurrentBlockTransacrions = require('./functions/getCurrentBlockTransacrions');
+const getPendingSubscription = require('./functions/getPendingSubscription');
+const getDataIfLiquidityTransaction = require('./functions/getDataIfLiquidityTransaction');
 
 const PORT = process.env.PORT || 3000;
 
@@ -53,20 +54,21 @@ async function start() {
       switch (messageObject.type){
         case "subscribeLiquidity":
           console.log(m);
-          let liquidityInterval = setInterval( async () => {
-            getExactTokenLiquidityTransactions(messageObject.tokenAddress, messageObject.nodeAddress)
-              .then((value) => {
-                if(value.length){
-                  console.log('Have liquid', value);
-                  ws.send(JSON.stringify({type: 'success', hash: value[0].hash, blockNumber: value[0].blockNumber}));
-                  clearInterval(liquidityInterval);
-                }
-              })
-              .catch((error) => {
-                ws.send(JSON.stringify({type: 'error', value: error}));
-                clearInterval(liquidityInterval);
-              })
-          }, 400);
+
+          try {
+            getPendingSubscription(messageObject.nodeAddress)
+            .on("data", async (txHash) => {
+              const txData = await getDataIfLiquidityTransaction(messageObject.nodeAddress, txHash);
+
+              if(txData?.token == messageObject.tokenAddress){
+                console.log('Have liquid', txData);
+                ws.send(JSON.stringify({type: 'success', hash: txData.hash}));
+              }
+            });
+          } catch (error) {
+            ws.send(JSON.stringify({type: 'error', value: error}));
+          }
+
         case "subscribeSwap":
           console.log(m);
           let swapInterval = setInterval( async () => {
@@ -74,7 +76,7 @@ async function start() {
 
             getCurrentBlockTransacrions(nodeAddress)
               .then((transactions) => {
-                let liquidityTx, swapTx = null
+                let liquidityTx, swapTx = null;
 
                 swapTx = transactions.find((tx) => tx.hash == swapHash);
                 liquidityTx = transactions.find((tx) => tx.hash == liquidityHash);
@@ -112,7 +114,7 @@ async function start() {
                 ws.send(JSON.stringify({type: 'error', value: error}));
                 clearInterval(swapInterval);
               })
-          }, 400);
+          }, 600);
       }
     });
 

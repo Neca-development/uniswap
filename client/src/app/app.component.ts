@@ -65,8 +65,6 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.updateComponent();
 
-    this.tradingService.watchPending(); // TEST
-
     setInterval(async () => {
       if(this.data.isNetworkValid){
 
@@ -337,11 +335,12 @@ export class AppComponent implements OnInit {
                 return;
               })
             } catch (error) {
-              console.log('Failed to execute');
+              console.log('Cancellenation failed to execute');
+              this.cancelSwap('Cancellenation failed to execute');
             }
           } catch (error) {
             this.data.status = 'Swap failed to execute';
-            this.notificationsService.openSnackBar('Swap failed to execute');
+            this.cancelSwap('Swap failed to execute');
           }
         }
       }
