@@ -16,7 +16,8 @@ export class ProvidersService {
   }
 
   async setProvider(network){
-    const httpsFromWss = 'https' + network.slice(3);
+    const dotsIndex = network.indexOf('://');
+    const httpsFromWss = 'https' + network.slice(dotsIndex);
 
     this.web3 = new Web3(
       new Web3.providers.WebsocketProvider(network),
