@@ -65,20 +65,24 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.updateComponent();
 
-    setInterval(async () => {
+    let updateInteraval = setInterval(async () => {
       if(this.data.isNetworkValid){
+        try{
+          const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
 
+          if(tempCurrentBlock != this.data.currentBlock){
+            this.data.currentBlock = tempCurrentBlock;
 
-        const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
+            if(this.swap.tokenAddress && this.swap.isTokenValid){
+              this.updateLiquidity(this.swap.tokenAddress, false);
+            }
 
-        if(tempCurrentBlock != this.data.currentBlock){
-          this.data.currentBlock = tempCurrentBlock;
-
-          if(this.swap.tokenAddress && this.swap.isTokenValid){
-            this.updateLiquidity(this.swap.tokenAddress, false);
+            this.updateBalance(false);
           }
-
-          this.updateBalance(false);
+        } catch (error) {
+          console.log(error);
+          this.notificationsService.openSnackBar('Network problems, try to change node address');
+          clearInterval(updateInteraval);
         }
       }
     }, 2000);
