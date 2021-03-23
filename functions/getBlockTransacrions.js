@@ -1,11 +1,11 @@
-const Web3 = require('web3');
+async function getBlockTransacrions(web3, blockNumber){
+  try {
+    blockInfo = await web3.eth.getBlock(blockNumber, true);
 
-async function getBlockTransacrions(nodeAddress, blockNumber){
-  const web3 = new Web3(nodeAddress);
-
-  blockInfo = await web3.eth.getBlock(blockNumber, true);
-
-  return blockInfo.transactions;
+    return blockInfo.transactions;
+  } catch (error) {
+    throw new Error(error);
+  }
 }
 
 module.exports = getBlockTransacrions;

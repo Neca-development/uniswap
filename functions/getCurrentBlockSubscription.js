@@ -1,8 +1,9 @@
-const Web3 = require('web3');
-
-function getCurrentBlockSubscription(nodeAddress){
-  const web3 = new Web3(nodeAddress);
-  return web3.eth.subscribe('newBlockHeaders');
+function getCurrentBlockSubscription(web3){
+  try {
+    return web3.eth.subscribe('newBlockHeaders');
+  } catch (error) {
+    throw new Error(error);
+  }
 }
 
 module.exports = getCurrentBlockSubscription;

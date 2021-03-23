@@ -63,7 +63,13 @@ export class AppComponent implements OnInit {
   ){}
 
   ngOnInit(): void {
-    this.updateComponent();
+    try {
+      this.updateComponent();
+    } catch (error) {
+      console.log(error);
+      this.cancelSwap('Network problems, try to change your node address');
+    }
+
 
     let updateInteraval = setInterval(async () => {
       if(this.data.isNetworkValid){
@@ -81,7 +87,7 @@ export class AppComponent implements OnInit {
           }
         } catch (error) {
           console.log(error);
-          this.notificationsService.openSnackBar('Network problems, try to change node address');
+          this.cancelSwap('Network problems, try to change your node address');
           clearInterval(updateInteraval);
         }
       }
@@ -90,7 +96,12 @@ export class AppComponent implements OnInit {
 
   async checkSaveAction(isSaveAction = false){
     if(isSaveAction){
-      this.updateComponent();
+      try {
+        this.updateComponent();
+      } catch (error) {
+        console.log(error);
+        this.cancelSwap('Network problems, try to change your node address');
+      }
     }
   }
 

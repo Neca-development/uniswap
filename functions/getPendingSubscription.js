@@ -1,8 +1,9 @@
-const Web3 = require('web3');
-
-function getPendingSubscription(nodeAddress){
-  const web3 = new Web3(nodeAddress);
-  return web3.eth.subscribe('pendingTransactions');
+function getPendingSubscription(web3){
+  try {
+    return web3.eth.subscribe('pendingTransactions');
+  } catch (error) {
+    throw new Error(error);
+  }
 }
 
 module.exports = getPendingSubscription;
