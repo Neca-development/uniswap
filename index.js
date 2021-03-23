@@ -52,12 +52,13 @@ async function start() {
     ws.on('message', async (m) => {
       ws.send(JSON.stringify('Start watching your request'));
       const messageObject = JSON.parse(m);
-      switch (messageObject.type){
-        case "subscribeLiquidity":
-          console.log(m);
 
-          try {
-            getPendingSubscription(messageObject.nodeAddress)
+      if(messageObject.type == "subscribeLiquidity"){
+        toggleSubscribe = true;
+        console.log('liquidity', m);
+
+        try {
+          getPendingSubscription(messageObject.nodeAddress)
             .on("data", async (txHash) => {
               const txData = await getDataIfLiquidityTransaction(messageObject.nodeAddress, txHash);
 
@@ -67,13 +68,16 @@ async function start() {
               }
             });
           } catch (error) {
-            ws.send(JSON.stringify({type: 'error', value: error}));
+            ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
           }
+      }
 
-        case "subscribeSwap":
-          console.log(m);
-          const { nodeAddress, swapHash, liquidityHash } = messageObject;
+      if(messageObject.type == "subscribeSwap"){
+        toggleSubscribe = true;
+        console.log('sub', m);
+        const { nodeAddress, swapHash, liquidityHash } = messageObject;
 
+        try {
           getCurrentBlockSubscription(nodeAddress)
             .on("data", ({number}) => {
               getBlockTransacrions(nodeAddress, number)
@@ -110,11 +114,19 @@ async function start() {
                   }
                 })
                 .catch((error) => {
-                  ws.send(JSON.stringify({type: 'error', value: error}));
+                  ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
                 })
             })
+        } catch (error) {
+          ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
+        }
+      }
+
+      if(messageObject.type == "unsubscribe"){
+        console.log("unsubscribe");
       }
     });
+
     ws.on("error", e => ws.send(e));
   });
   server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
@@ -122,31 +134,31 @@ async function start() {
 
 
 // ELECTRON APP
-// let mainWindow;
+let mainWindow;
 
-// function createWindow () {
+function createWindow () {
 
-//   start();
+  start();
 
-//   //Create the browser window
-//   mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
+  //Create the browser window
+  mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
 
-//   mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
+  mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
 
-//   // mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
-//   mainWindow.on('close', function() {
-//       mainWindow = null;
-//   });
-// }
+  mainWindow.on('close', function() {
+      mainWindow = null;
+  });
+}
 
-// app.on('ready', createWindow);
-// app.on('window-all-closed', function() {
-//   if (process.platform !== 'darwin') {
-//       app.quit();
-//   }
-// });
+app.on('ready', createWindow);
+app.on('window-all-closed', function() {
+  if (process.platform !== 'darwin') {
+      app.quit();
+  }
+});
 
 // LOCAL SERVER
-start();
+// start();
 // // require('./test.js');

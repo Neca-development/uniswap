@@ -349,10 +349,12 @@ export class AppComponent implements OnInit {
     });
   }
 
-  cancelSwap(snackBarText = 'Swap canceled by user'){
-    this.liquiditySubscription.unsubscribe();
+  cancelSwap(snackBarText = ''){
+    this.liquiditySubscription?.unsubscribe();
     this.swapSubscription?.unsubscribe();
-    this.notificationsService.openSnackBar(snackBarText);
+    if(snackBarText){
+      this.notificationsService.openSnackBar(snackBarText);
+    }
     this.swap.active = false;
     this.data.isSwapWas = false;
   }

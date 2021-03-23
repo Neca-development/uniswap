@@ -186,7 +186,7 @@ export class TradingService {
     privateKey,
     chainIdInput,
     inputGasPrice = 0,
-    inputGasLimit = '300000',
+    inputGasLimit,
     inputSlippage = 1000,
     inputDeadline = 20
   ){
@@ -209,7 +209,7 @@ export class TradingService {
     const value = web3.utils.numberToHex(trade.inputAmount.raw.toString());
     const nonce = await web3.eth.getTransactionCount(account.address);
 
-    const gasLimit = web3.utils.numberToHex(inputGasLimit);
+    const gasLimit = web3.utils.numberToHex(inputGasLimit || '300000');
     const gasPrice = web3.utils.numberToHex((await this.getGasPrice(chainIdInput, inputGasPrice)).toString());
 
     // CONTRACT INIT (we may add other contracts)
