@@ -8,7 +8,11 @@ const hostServer = express();
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
 const WebSocket = require("ws");
-const getExactTokenLiquidityTransactions = require('./functions/getExactTokenLiquidityTransactions');
+const getBlockTransacrions = require('./functions/getBlockTransacrions');
+const getPendingSubscription = require('./functions/getPendingSubscription');
+const getDataIfLiquidityTransaction = require('./functions/getDataIfLiquidityTransaction');
+const getCurrentBlockSubscription = require('./functions/getCurrentBlockSubscription');
+const Web3 = require('web3');
 
 const PORT = process.env.PORT || 3000;
 
@@ -49,23 +53,84 @@ async function start() {
     ws.on('message', async (m) => {
       ws.send(JSON.stringify('Start watching your request'));
       const messageObject = JSON.parse(m);
-      switch (messageObject.type){
-        case "subscribeLiquidity":
-          console.log(m);
-          let interval = setInterval( async () => {
-            getExactTokenLiquidityTransactions(messageObject.tokenAddress, messageObject.nodeAddress)
-              .then((value) => {
-                if(value.length){
-                  console.log('Have one', value);
-                  ws.send(JSON.stringify({type: 'success', hash: value[0].hash, blockNumber: value[0].blockNumber}));
-                  clearInterval(interval);
+      const web3 = new Web3(messageObject.nodeAddress);
+
+      if(messageObject.type == "subscribeLiquidity"){
+        toggleSubscribe = true;
+        console.log('liquidity', m);
+
+        try {
+          getPendingSubscription(web3)
+            .on("data", async (txHash) => {
+              try {
+                const txData = await getDataIfLiquidityTransaction(web3, txHash);
+
+                if(txData?.token == messageObject.tokenAddress){
+                  console.log('Have liquid', txData);
+                  ws.send(JSON.stringify({type: 'success', hash: txData.hash}));
                 }
-              })
-              .catch((error) => {
-                ws.send(JSON.stringify({type: 'error', value: error}));
-                clearInterval(interval);
-              })
-          }, 2000);
+              } catch (error) {
+                ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
+              }
+            })
+        } catch (error) {
+          ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
+        }
+      }
+
+      if(messageObject.type == "subscribeSwap"){
+        toggleSubscribe = true;
+        console.log('sub', m);
+        const { swapHash, liquidityHash } = messageObject;
+
+        try {
+          getCurrentBlockSubscription(web3)
+            .on("data", ({number}) => {
+              getBlockTransacrions(web3, number)
+                .then((transactions) => {
+                  let liquidityTx, swapTx = null;
+
+                  swapTx = transactions.find((tx) => tx.hash == swapHash);
+                  liquidityTx = transactions.find((tx) => tx.hash == liquidityHash);
+
+                  if(swapTx && liquidityTx){
+                    console.log('Have one', { liquidityTx, swapTx });
+                    ws.send(JSON.stringify({type: 'success', blockNumber: swapTx.blockNumber }));
+                    return;
+                  }
+
+                  if(liquidityTx && !swapTx){
+                    console.log('Out of liquidity', { liquidityTx });
+                    ws.send(JSON.stringify({
+                      type: 'fail',
+                      message: 'Out of liquidity block',
+                      blockNumber: liquidityTx.blockNumber
+                    }));
+                    return;
+                  }
+
+                  if(!liquidityTx && swapTx){
+                    console.log('Swap failed', { swapTx });
+                    ws.send(JSON.stringify({
+                      type: 'fail',
+                      message: 'Swap failed',
+                      blockNumber: swapTx.blockNumber
+                    }));
+                    return;
+                  }
+                })
+                .catch((error) => {
+                  ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
+                })
+            })
+            .on('error', error => {throw new Error(error)})
+        } catch (error) {
+          ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
+        }
+      }
+
+      if(messageObject.type == "unsubscribe"){
+        console.log("unsubscribe");
       }
     });
 

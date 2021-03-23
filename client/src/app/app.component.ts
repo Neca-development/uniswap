@@ -22,6 +22,7 @@ export class AppComponent implements OnInit {
     gasPrice: '',
     gasLimit: '',
     active: false,
+    cancelOnFail: true
   };
 
   data  = {
@@ -39,6 +40,8 @@ export class AppComponent implements OnInit {
       weth: 0,
       tokenX: 0
     },
+    liquidityTxn: '',
+    swapTxn: '',
     currentBlock: 0,
     status: 'waiting for liquidity',
     isAddressValid: false,
@@ -48,7 +51,8 @@ export class AppComponent implements OnInit {
   };
 
   settings;
-  subscription;
+  liquiditySubscription;
+  swapSubscription;
 
   constructor(
     private settingsService: SettingsService,
@@ -59,20 +63,32 @@ export class AppComponent implements OnInit {
   ){}
 
   ngOnInit(): void {
-    this.updateComponent();
+    try {
+      this.updateComponent();
+    } catch (error) {
+      console.log(error);
+      this.cancelSwap('Network problems, try to change your node address');
+    }
 
-    setInterval(async () => {
+
+    let updateInteraval = setInterval(async () => {
       if(this.data.isNetworkValid){
-        const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
+        try{
+          const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
 
-        if(tempCurrentBlock != this.data.currentBlock){
-          this.data.currentBlock = tempCurrentBlock;
+          if(tempCurrentBlock != this.data.currentBlock){
+            this.data.currentBlock = tempCurrentBlock;
 
-          if(this.swap.tokenAddress && this.swap.isTokenValid){
-            this.updateLiquidity(this.swap.tokenAddress, false);
+            if(this.swap.tokenAddress && this.swap.isTokenValid){
+              this.updateLiquidity(this.swap.tokenAddress, false);
+            }
+
+            this.updateBalance(false);
           }
-
-          this.updateBalance(false);
+        } catch (error) {
+          console.log(error);
+          this.cancelSwap('Network problems, try to change your node address');
+          clearInterval(updateInteraval);
         }
       }
     }, 2000);
@@ -80,7 +96,12 @@ export class AppComponent implements OnInit {
 
   async checkSaveAction(isSaveAction = false){
     if(isSaveAction){
-      this.updateComponent();
+      try {
+        this.updateComponent();
+      } catch (error) {
+        console.log(error);
+        this.cancelSwap('Network problems, try to change your node address');
+      }
     }
   }
 
@@ -107,6 +128,8 @@ export class AppComponent implements OnInit {
       if(!newSettings.network.nodeAddress){
         this.data.isAddressValid = false;
         this.data.isNetworkValid = false;
+        this.swap.tokenAddress = '';
+        this.cancelSwap();
         return;
       }
 
@@ -117,8 +140,8 @@ export class AppComponent implements OnInit {
         this.swap.gasVariant = false;
         this.data.isSwapWas = false;
 
-        if(this?.subscription){
-          this.subscription.unsubscribe();
+        if(this?.liquiditySubscription && this.swap.active){
+          this.liquiditySubscription.unsubscribe();
           this.notificationsService.openSnackBar('Swap canceled');
           this.swap.active = false;
         }
@@ -219,51 +242,140 @@ export class AppComponent implements OnInit {
 
     this.data.status = "Waiting for liquidity to be added";
 
-    this.websocketService.startWatching(this.swap.tokenAddress, this.settings.network.nodeAddress);
-    const observable = this.websocketService.getOservable();
+    this.websocketService.startWatchingLiquidity(this.swap.tokenAddress, this.settings.network.nodeAddress);
+    const liquidityObservable = this.websocketService.getLiquidityOservable();
 
-    this.subscription = observable.subscribe(async message => {
-      console.log(message);
+    this.liquiditySubscription = liquidityObservable.subscribe(async message => {
+      console.log('liquidity message', message);
       this.swap.active = true;
 
       if(message.type == 'success' || message.type == 'error'){
-        this.subscription.unsubscribe();
+        this.liquiditySubscription.unsubscribe();
+
+        if(message.type == 'error'){
+          this.backendNetworkError();
+        }
 
         if(message.type == 'success'){
-          this.data.status = 'Liquidity tx in the pending block';
+          this.data.status = 'Liquidity tx in the pending block. Sending swap tx…';
+          this.data.liquidityTxn = message.transactionHash;
           try {
-            const receipt = await this.tradingService.initTransaction(
+            let tx = await this.tradingService.initTransaction(
               this.swap.tokenAddress,
               this.swap.tokenAmount,
               this.settings.address,
               this.settings.privateKey,
               this.settings.network.chainId,
               !this.swap.gasVariant ? 0 : +this.swap.gasPrice,
-              !this.swap.gasVariant ? '300000' : this.swap.gasLimit
+              !this.swap.gasVariant ? '300000' : this.swap.gasLimit,
             );
-            console.log(receipt);
-            this.data.status = `
-              Swap executed in block ${receipt.blockNumber}.
-              Swap hash: ${receipt.hash}.
-              Liquididy added in block ${message.blockNumber}.
-              Liquidity hash: ${message.hash}.
-            `;
-            this.swap.active = false;
-            this.data.isSwapWas = true;
-            this.notificationsService.openSnackBar('Swap executed succesfuly');
+
+            this.data.status = `Liquidity tx in the pending block. Swap tx hash: ${tx.hash}`;
+
+            try {
+              new Promise((resolve, reject) => {
+                this.websocketService.startWatchingSwap(message.hash, tx.hash, this.settings.network.nodeAddress);
+
+                const swapObservable = this.websocketService.getSwapObservable();
+                this.swapSubscription = swapObservable.subscribe(async subMessage => {
+                  console.log('swapMessage', subMessage);
+
+                  if(subMessage.type == 'success'){
+                    resolve(subMessage.blockNumber);
+                  }
+
+                  if(subMessage.type == 'fail'){
+                    reject(subMessage.blockNumber);
+                  }
+
+                  if(subMessage.type == 'error'){
+                    this.backendNetworkError();
+                  }
+                })
+              })
+              .then((blockNumber) => {
+                this.swapSubscription.unsubscribe();
+                console.log('Swap executed ');
+                this.data.status = `
+                  Swap executed in block ${blockNumber}.
+                  Swap hash: ${tx.hash}.
+                  Liquididy added in block ${blockNumber}.
+                  Liquidity hash: ${message.hash}.
+                `;
+                this.swap.active = false;
+                this.data.isSwapWas = true;
+                this.notificationsService.openSnackBar('Swap executed succesfuly');
+              })
+              .catch((blockNumber) => {
+                this.swapSubscription.unsubscribe();
+                if(this.swap.cancelOnFail){
+                  console.log('Swap out of liquidity block');
+                  this.data.status = `
+                    Swap out of liquidity block. Trying to cancel swap.
+                    Liquididy added in block ${blockNumber}.
+                    Liquidity hash: ${message.hash}.
+                  `;
+
+                  this.tradingService.sendCancelTransaction(
+                    this.settings.privateKey,
+                    tx.nonce,
+                    this.settings.network.chainId,
+                    tx.gasPrice.toNumber()
+                  ).then(result => {
+                    console.log(result);
+                    this.data.status = `
+                      Swap cancellenation hash: ${result.transactionHash}.
+                      Liquididy added in block ${blockNumber}.
+                      Liquidity hash: ${message.hash}.
+                    `;
+                    this.notificationsService.openSnackBar('Swap caneled succesfuly');
+                  }).catch(error => {
+                    console.log(error);
+                    this.data.status = `
+                      Cancellenation failed. Swap hash: ${tx.hash}.
+                      Liquididy added in block ${blockNumber}.
+                      Liquidity hash: ${message.hash}.
+                    `;
+                    this.notificationsService.openSnackBar('Cancel transaction failed');
+                  });
+                } else {
+                  this.data.status = `
+                    Swap out of liquidity block. Swap hash: ${tx.hash}.
+                    Liquididy added in block ${blockNumber}.
+                    Liquidity hash: ${message.hash}.
+                  `;
+                  this.notificationsService.openSnackBar('Swap out of liquidity block');
+                }
+
+                this.swap.active = false;
+                this.data.isSwapWas = true;
+                return;
+              })
+            } catch (error) {
+              console.log('Cancellenation failed to execute');
+              this.cancelSwap('Cancellenation failed to execute');
+            }
           } catch (error) {
             this.data.status = 'Swap failed to execute';
-            this.notificationsService.openSnackBar('Swap failed to execute');
+            this.cancelSwap('Swap failed to execute');
           }
         }
       }
     });
   }
 
-  async cancelSwap(){
-    this.subscription.unsubscribe();
-    this.notificationsService.openSnackBar('Swap canceled by user');
+  cancelSwap(snackBarText = ''){
+    this.liquiditySubscription?.unsubscribe();
+    this.swapSubscription?.unsubscribe();
+    if(snackBarText){
+      this.notificationsService.openSnackBar(snackBarText);
+    }
     this.swap.active = false;
     this.data.isSwapWas = false;
+  }
+
+  backendNetworkError(){
+    console.log('Node connection error from backend');
+    this.cancelSwap('Node connection error from backend');
   }
 }

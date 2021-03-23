@@ -8,17 +8,30 @@ import { environment } from 'src/environments/environment';
 })
 export class WebsocketService {
   _ws = webSocket('ws://localhost:3000');
-  _observable: Observable<any>;
+  _liquidityObservable: Observable<any>;
+  _swapObservable: Observable<any>;
 
-  async startWatching(tokenAddress, nodeAddress){
-    this._observable = this._ws.multiplex(
-      () => ({type: 'subscribeLiquidity', tokenAddress, nodeAddress: nodeAddress || environment.INFURA_WSS_ROPSTEN}),
+  observableFactory(type, params){
+    return this._ws.multiplex(
+      () => ({type, ...params}),
       () => ({type: 'unsubscribe'}),
       message => true
     );
   }
 
-  getOservable(){
-    return this._observable;
+  startWatchingLiquidity(tokenAddress, nodeAddress){
+    this._liquidityObservable = this.observableFactory('subscribeLiquidity', { tokenAddress, nodeAddress: nodeAddress || environment.INFURA_WSS_ROPSTEN });
+  }
+
+  startWatchingSwap(liquidityHash, swapHash, nodeAddress){
+    this._swapObservable = this.observableFactory('subscribeSwap', { liquidityHash, swapHash, nodeAddress: nodeAddress || environment.INFURA_WSS_ROPSTEN });
+  }
+
+  getLiquidityOservable(){
+    return this._liquidityObservable;
+  }
+
+  getSwapObservable(){
+    return this._swapObservable;
   }
 }

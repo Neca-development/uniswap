@@ -68,7 +68,7 @@ export class SettingsDialogComponent implements OnInit {
         this.settings.network.name = name || 'UNKNOWN';
         this.settingsService.setSettings(this.settings);
       } catch (error) {
-        this.notificationsService.openSnackBar('Invalid network address');
+        this.notificationsService.openSnackBar('Invalid node address');
         this.settings.network = {
           name: 'ROPSTEN',
           nodeAddress: '',

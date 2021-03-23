@@ -56,3 +56,7 @@ input{
   box-sizing: border-box;
   width: 100%;
 }
+
+.cdk-global-scrollblock{
+  overflow: hidden;
+}
