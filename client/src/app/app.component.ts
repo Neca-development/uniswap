@@ -330,7 +330,7 @@ export class AppComponent implements OnInit {
                     `;
                     this.notificationsService.openSnackBar('Swap caneled succesfuly');
                   }).catch(error => {
-                    console.log(error);
+                    console.log('Cancellenation failed', error);
                     this.data.status = `
                       Cancellenation failed. Swap hash: ${tx.hash}.
                       Liquididy added in block ${blockNumber}.
@@ -352,10 +352,11 @@ export class AppComponent implements OnInit {
                 return;
               })
             } catch (error) {
-              console.log('Cancellenation failed to execute');
+              console.log('Cancellenation failed to execute:', error)
               this.cancelSwap('Cancellenation failed to execute');
             }
           } catch (error) {
+            console.log('Swap failed to execute:', error)
             this.data.status = 'Swap failed to execute';
             this.cancelSwap('Swap failed to execute');
           }

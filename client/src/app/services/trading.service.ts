@@ -162,23 +162,6 @@ export class TradingService {
     }
   }
 
-  async getTrade(inputTokenB, count, chainIdInput){
-    let web3 = this.providersService.getProvider();
-    const chainId =  chainIdInput;
-
-    const tokenBAddress = web3.utils.toChecksumAddress(inputTokenB);
-    const tokenB = await Fetcher.fetchTokenData(chainId, tokenBAddress);
-
-    const pair = await Fetcher.fetchPairData(WETH[chainId], tokenB);
-
-    const route = new Route([pair], WETH[chainId]);
-    const amountIn = this.getCountWithDecimals(+count || 1, WETH[chainId].decimals);
-
-    const trade = new Trade(route, new TokenAmount(WETH[chainId], amountIn), TradeType.EXACT_INPUT);
-
-    return { tokenA: WETH[chainId], tokenB, midPrice: route.midPrice.toSignificant(6), executionPrice: trade.executionPrice.toSignificant(6), trade }
-  }
-
   async initTransaction(
     inputTokenB,
     inputCount,
@@ -196,17 +179,12 @@ export class TradingService {
     const signer = new ethers.Wallet(privateKey, provider);
     const account = signer.connect(provider);
 
-    // IDEA: move out getTrage (?)
-    const { tokenA, tokenB, trade } = await this.getTrade(inputTokenB, inputCount, chainIdInput);
-
     // TRANSACTION VALUES
-    const slippageTolerance = new Percent((inputSlippage * 10).toString(), '1000'); //(делимое, делитель) // bip = 0.001
-
-    const amountOutMin = web3.utils.numberToHex(trade.minimumAmountOut(slippageTolerance).raw.toString());
-    const path = [tokenA.address, tokenB.address];
+    const amountOutMin = web3.utils.numberToHex(0..toString());
+    const path = [WETH[chainIdInput].address, web3.utils.toChecksumAddress(inputTokenB)];
     const to = walletAddress;
     const deadline = Math.floor(Date.now() / 1000) + 60 * inputDeadline;
-    const value = web3.utils.numberToHex(trade.inputAmount.raw.toString());
+    const value = web3.utils.numberToHex((inputCount * 10 ** 18).toString());
     const nonce = await web3.eth.getTransactionCount(account.address);
 
     const gasLimit = web3.utils.numberToHex(inputGasLimit || '300000');
