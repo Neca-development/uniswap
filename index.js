@@ -8,38 +8,38 @@ const hostServer = express();
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
 const WebSocket = require("ws");
+const Logger = require('./services/logger');
+
 const getBlockTransacrions = require('./functions/getBlockTransacrions');
 const getPendingSubscription = require('./functions/getPendingSubscription');
 const getDataIfLiquidityTransaction = require('./functions/getDataIfLiquidityTransaction');
 const getCurrentBlockSubscription = require('./functions/getCurrentBlockSubscription');
+
 const Web3 = require('web3');
+const logger = new Logger();
 
 const PORT = process.env.PORT || 3000;
-
-const allowCrossDomain = function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-
-  // intercept OPTIONS method
-  if ('OPTIONS' == req.method) {
-    res.send(200);
-  }
-  else {
-    next();
-  }
-};
 
 // Parsers
 hostServer.use(bodyParser.urlencoded({extended: false}));
 hostServer.use(bodyParser.json());
-hostServer.use(allowCrossDomain);
 
 // Angular DIST output folder
 hostServer.use(express.static(path.join(__dirname, 'client/dist/client')));
 
 hostServer.use(cors());
 hostServer.use(express.json({ extended: true }));
+
+hostServer.post('/api/writeLog', (req, res) => {
+  try{
+    console.log('req', req.query);
+    logger.writeLog({header: req.body.header || 'Post request', data: req.body.data});
+    res.sendStatus(200);
+  } catch (e) {
+    logger.writeLog({header: 'Write log action failed', data: e});
+    res.sendStatus(500);
+  }
+});
 
 hostServer.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/dist/client/index.html'));
@@ -159,13 +159,19 @@ async function start() {
 //   });
 // }
 
-// app.on('ready', createWindow);
+// app.on('ready', () => {
+//   createWindow();
+//   logger.writeLog({header: 'Application launch'});
+// });
 // app.on('window-all-closed', function() {
 //   if (process.platform !== 'darwin') {
 //       app.quit();
 //   }
+  
+//   logger.writeLog({header: 'Application exit'});
 // });
 
 // LOCAL SERVER
-start();
+logger.writeLog({header: 'Application launch'});
+start().then(() => logger.writeLog({header: 'Application exit'}));
 // // require('./test.js');
