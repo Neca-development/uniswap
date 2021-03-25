@@ -1,3 +1,4 @@
+import { LoggerService } from './services/logger.service';
 import { NotificationsService } from './services/notifications.service';
 import { WebsocketService } from './services/websocket.service';
 import { ProvidersService } from './services/providers.service';
@@ -59,7 +60,8 @@ export class AppComponent implements OnInit {
     private tradingService: TradingService,
     private providersService: ProvidersService,
     private websocketService: WebsocketService,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
+    private loggerService: LoggerService
   ){}
 
   ngOnInit(): void {
@@ -69,6 +71,8 @@ export class AppComponent implements OnInit {
       console.log(error);
       this.cancelSwap('Network problems, try to change your node address');
     }
+
+    this.loggerService.writeLog({header: 'App component update', data: this.settings});
 
 
     let updateInteraval = setInterval(async () => {
@@ -352,10 +356,11 @@ export class AppComponent implements OnInit {
                 return;
               })
             } catch (error) {
-              console.log('Cancellenation failed to execute');
+              console.log('Cancellenation failed to execute', error);
               this.cancelSwap('Cancellenation failed to execute');
             }
           } catch (error) {
+            console.log('Swap failed to execute', error);
             this.data.status = 'Swap failed to execute';
             this.cancelSwap('Swap failed to execute');
           }
