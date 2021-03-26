@@ -17,7 +17,6 @@ export class ApiService {
   }
 
   async post<T>(url, data = {}){
-    console.log('post');
     return await this.request<T>(url, 'POST', data);
   }
 

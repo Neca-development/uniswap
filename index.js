@@ -32,7 +32,7 @@ hostServer.use(express.json({ extended: true }));
 
 hostServer.post('/api/writeLog', (req, res) => {
   try{
-    logger.writeLog({header: req.body.header || 'Post request', data: req.body.data});
+    logger.writeLog({header: req.body.header || 'Post request', data: req.body.data}, req.body.type);
     res.status(200).json({ result: 'OK' });
   } catch (e) {
     logger.writeLog({header: 'Write log action failed', data: e});

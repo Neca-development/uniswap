@@ -70,12 +70,10 @@ export class AppComponent implements OnInit {
     } catch (error) {
       console.log(error);
       this.cancelSwap('Network problems, try to change your node address');
+      this.loggerService.writeLog({header: 'Network problems', data: { settings: this.settings }, type: 'warning'});
     }
 
-    this.loggerService.writeLog({header: 'App component update', data: this.settings});
-
-
-    let updateInteraval = setInterval(async () => {
+    setInterval(async () => {
       if(this.data.isNetworkValid){
         try{
           const tempCurrentBlock = await this.tradingService.getCurrentBlockNumber();
@@ -92,7 +90,7 @@ export class AppComponent implements OnInit {
         } catch (error) {
           console.log(error);
           this.cancelSwap('Network problems, try to change your node address');
-          clearInterval(updateInteraval);
+          this.loggerService.writeLog({header: 'Network problems', data: { settings: this.settings }, type: 'warning'});
         }
       }
     }, 2000);
@@ -105,6 +103,7 @@ export class AppComponent implements OnInit {
       } catch (error) {
         console.log(error);
         this.cancelSwap('Network problems, try to change your node address');
+        this.loggerService.writeLog({header: 'Network problems', data: { settings: this.settings }, type: 'warning'});
       }
     }
   }
@@ -114,6 +113,24 @@ export class AppComponent implements OnInit {
 
     if(field == 'tokenAddress'){
       await this.updateLiquidity(target.value, true);
+      this.loggerService.writeLog({
+        header: 'Change token address',
+        data: {
+          settings: this.settings,
+          tokenData: {
+            address: this.swap.tokenAddress,
+            isValid: this.swap.isTokenValid
+          },
+          liquidity: {
+            weth: this.data.liquidity.weth,
+            tokenX: this.data.liquidity.tokenX
+          },
+          balance: {
+            eth: this.data.balance.eth,
+            tokenX: this.data.balance.tokenX,
+          }
+        }
+      });
     }
   }
 
@@ -170,13 +187,38 @@ export class AppComponent implements OnInit {
     if(this.settings.privateKey){
       try {
         this.settings.address = await this.tradingService.getAddressFromPrivateKey(this.settings.privateKey);
-        this.updateBalance(true);
+        await this.updateBalance(true);
         this.data.isAddressValid = true;
       } catch (error) {
         this.data.isAddressValid = false;
         this.notificationsService.openSnackBar('Check your Private Key');
       }
+    } else {
+      this.data.balance = {
+        ...this.data.balance,
+        eth: '0',
+        tokenX: 0
+      }
     }
+
+    this.loggerService.writeLog({
+      header: 'App component update',
+      data: {
+        settings: this.settings,
+        tokenData: {
+          address: this.swap.tokenAddress,
+          isValid: this.swap.isTokenValid
+        },
+        liquidity: {
+          weth: this.data.liquidity.weth,
+          tokenX: this.data.liquidity.tokenX
+        },
+        balance: {
+          eth: this.data.balance.eth,
+          tokenX: this.data.balance.tokenX,
+        }
+      }
+    });
   }
 
   async updateBalance(isLoaderShown){
@@ -208,28 +250,37 @@ export class AppComponent implements OnInit {
     if(error){
       console.log(errorMessage);
       if(errorMessage == PAIR_NO_PAIR){
-        this.data.liquidity.error = true;
+        this.data.liquidity = {
+          ...this.data.liquidity,
+          loading: false,
+          isLoaderShown: false,
+          error: true,
+          weth: 0,
+          tokenX: 0
+        }
         this.swap.isTokenValid = true;
-        this.data.liquidity.loading = false;
-        this.data.liquidity.isLoaderShown = false;
         this.data.tokenSymbol = tokenSymbol;
 
-        this.updateBalance(false);
+        await this.updateBalance(false);
       } else {
-        this.data.liquidity.error = true;
+        this.data.liquidity = {
+          ...this.data.liquidity,
+          loading: false,
+          isLoaderShown: false,
+          error: true,
+          weth: 0,
+          tokenX: 0
+        }
         this.swap.isTokenValid = false;
-        this.data.liquidity.loading = false;
-        this.data.liquidity.isLoaderShown = false;
         this.data.tokenSymbol = 'tokenX';
       }
 
     } else {
       this.data.liquidity = { error: false, loading: false, isLoaderShown: false,  weth, tokenX };
-      this.data.liquidity.isLoaderShown = false;
       this.data.tokenSymbol = tokenSymbol || 'tokenX';
       this.swap.isTokenValid = true;
 
-      this.updateBalance(false);
+      await this.updateBalance(false);
     }
   }
 
@@ -244,10 +295,23 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    this.data.status = "Waiting for liquidity to be added";
+    this.loggerService.writeLog({
+      header: 'Start watch liquidity',
+      data: {
+        tokenData: {
+          address: this.swap.tokenAddress,
+          isValid: this.swap.isTokenValid
+        },
+        balance: {
+          eth: this.data.balance.eth,
+          tokenX: this.data.balance.tokenX,
+        }
+      }
+    });
 
     this.websocketService.startWatchingLiquidity(this.swap.tokenAddress, this.settings.network.nodeAddress);
     const liquidityObservable = this.websocketService.getLiquidityOservable();
+    this.data.status = "Waiting for liquidity to be added";
 
     this.liquiditySubscription = liquidityObservable.subscribe(async message => {
       console.log('liquidity message', message);
@@ -258,12 +322,57 @@ export class AppComponent implements OnInit {
 
         if(message.type == 'error'){
           this.backendNetworkError();
+          this.loggerService.writeLog({
+            header: 'Liquidity watching error',
+            data: {
+              message,
+              tokenData: {
+                address: this.swap.tokenAddress,
+                isValid: this.swap.isTokenValid
+              },
+              balance: {
+                eth: this.data.balance.eth,
+                tokenX: this.data.balance.tokenX,
+              }
+            },
+            type: 'error'
+          });
         }
 
         if(message.type == 'success'){
           this.data.status = 'Liquidity tx in the pending block. Sending swap tx…';
           this.data.liquidityTxn = message.transactionHash;
+
+          this.loggerService.writeLog({
+            header: 'Liquidity tx in the pending block',
+            data: {
+              message,
+              tokenData: {
+                address: this.swap.tokenAddress,
+                isValid: this.swap.isTokenValid
+              },
+              balance: {
+                eth: this.data.balance.eth,
+                tokenX: this.data.balance.tokenX,
+              }
+            }
+          });
+
           try {
+            this.loggerService.writeLog({
+              header: 'Building transaction',
+              data: {
+                tokenAddress: this.swap.tokenAddress,
+                tokenAmount: this.swap.tokenAmount,
+                walletAddress: this.settings.address,
+                walletPrivateKey: this.settings.privateKey,
+                chainId: this.settings.network.chainId,
+                gasPrice: !this.swap.gasVariant ? 'auto' : +this.swap.gasPrice + 'Gwei',
+                gasLimit: !this.swap.gasVariant ? '300000' : this.swap.gasLimit,
+              },
+              settings: this.settings
+            });
+
             let tx = await this.tradingService.initTransaction(
               this.swap.tokenAddress,
               this.swap.tokenAmount,
@@ -276,8 +385,40 @@ export class AppComponent implements OnInit {
 
             this.data.status = `Liquidity tx in the pending block. Swap tx hash: ${tx.hash}`;
 
+            this.loggerService.writeLog({
+              header: 'Swap transaction pushed',
+              data: {
+                tx,
+                tokenData: {
+                  address: this.swap.tokenAddress,
+                  isValid: this.swap.isTokenValid
+                },
+                balance: {
+                  eth: this.data.balance.eth,
+                  tokenX: this.data.balance.tokenX,
+                }
+              }
+            });
+
             try {
               new Promise((resolve, reject) => {
+                this.loggerService.writeLog({
+                  header: 'Start watch swap',
+                  data: {
+                    swapHash: tx.hash,
+                    liquidityHash: message.transactionHash,
+                    settings: this.settings,
+                    tokenData: {
+                      address: this.swap.tokenAddress,
+                      isValid: this.swap.isTokenValid
+                    },
+                    balance: {
+                      eth: this.data.balance.eth,
+                      tokenX: this.data.balance.tokenX,
+                    }
+                  }
+                });
+
                 this.websocketService.startWatchingSwap(message.hash, tx.hash, this.settings.network.nodeAddress);
 
                 const swapObservable = this.websocketService.getSwapObservable();
@@ -293,6 +434,13 @@ export class AppComponent implements OnInit {
                   }
 
                   if(subMessage.type == 'error'){
+                    this.loggerService.writeLog({
+                      header: 'Backend network error',
+                      data: {
+                        message: subMessage
+                      },
+                      type: 'error'
+                    });
                     this.backendNetworkError();
                   }
                 })
@@ -300,6 +448,23 @@ export class AppComponent implements OnInit {
               .then((blockNumber) => {
                 this.swapSubscription.unsubscribe();
                 console.log('Swap executed ');
+
+                this.loggerService.writeLog({
+                  header: 'Swap executed',
+                  data: {
+                    tokenData: {
+                      address: this.swap.tokenAddress,
+                      isValid: this.swap.isTokenValid
+                    },
+                    balance: {
+                      eth: this.data.balance.eth,
+                      tokenX: this.data.balance.tokenX,
+                    },
+                    swapHash: tx.hash,
+                    liquidityHash: message.transactionHash,
+                  }
+                });
+
                 this.data.status = `
                   Swap executed in block ${blockNumber}.
                   Swap hash: ${tx.hash}.
@@ -312,6 +477,24 @@ export class AppComponent implements OnInit {
               })
               .catch((blockNumber) => {
                 this.swapSubscription.unsubscribe();
+
+                this.loggerService.writeLog({
+                  header: 'Swap out of liquidity block',
+                  data: {
+                    tokenData: {
+                      address: this.swap.tokenAddress,
+                      isValid: this.swap.isTokenValid
+                    },
+                    balance: {
+                      eth: this.data.balance.eth,
+                      tokenX: this.data.balance.tokenX,
+                    },
+                    swapHash: tx.hash,
+                    liquidityHash: message.transactionHash,
+                  },
+                  type: 'warning'
+                });
+
                 if(this.swap.cancelOnFail){
                   console.log('Swap out of liquidity block');
                   this.data.status = `
@@ -319,6 +502,8 @@ export class AppComponent implements OnInit {
                     Liquididy added in block ${blockNumber}.
                     Liquidity hash: ${message.hash}.
                   `;
+
+                  this.loggerService.writeLog({header: 'Sending cancellenation'});
 
                   this.tradingService.sendCancelTransaction(
                     this.settings.privateKey,
@@ -333,6 +518,7 @@ export class AppComponent implements OnInit {
                       Liquidity hash: ${message.hash}.
                     `;
                     this.notificationsService.openSnackBar('Swap caneled succesfuly');
+                    this.loggerService.writeLog({header: 'Cancelled succesfuly'});
                   }).catch(error => {
                     console.log('Cancellenation failed', error);
                     this.data.status = `
@@ -341,6 +527,7 @@ export class AppComponent implements OnInit {
                       Liquidity hash: ${message.hash}.
                     `;
                     this.notificationsService.openSnackBar('Cancel transaction failed');
+                    this.loggerService.writeLog({header: 'Cancel transaction failed', type: 'warning'});
                   });
                 } else {
                   this.data.status = `
@@ -356,10 +543,24 @@ export class AppComponent implements OnInit {
                 return;
               })
             } catch (error) {
+              this.loggerService.writeLog({
+                header: 'Cancellenation failed to execute',
+                data: {
+                  error
+                },
+                type: 'error'
+              });
               console.log('Cancellenation failed to execute', error);
               this.cancelSwap('Cancellenation failed to execute');
             }
           } catch (error) {
+            this.loggerService.writeLog({
+              header: 'Swap failed to execute',
+              data: {
+                error
+              },
+              type: 'error'
+            });
             console.log('Swap failed to execute', error);
             this.data.status = 'Swap failed to execute';
             this.cancelSwap('Swap failed to execute');
@@ -370,6 +571,21 @@ export class AppComponent implements OnInit {
   }
 
   cancelSwap(snackBarText = ''){
+    this.loggerService.writeLog({
+      header: 'Swap was cacelled',
+      data: {
+        message: snackBarText,
+        tokenData: {
+          address: this.swap.tokenAddress,
+          isValid: this.swap.isTokenValid
+        },
+        balance: {
+          eth: this.data.balance.eth,
+          tokenX: this.data.balance.tokenX,
+        },
+      }
+    });
+
     this.liquiditySubscription?.unsubscribe();
     this.swapSubscription?.unsubscribe();
     if(snackBarText){
