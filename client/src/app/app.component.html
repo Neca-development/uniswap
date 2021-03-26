@@ -114,7 +114,7 @@
           <p>{{swap.active || data.isSwapWas && data.status ? data.status : 'Submit swap'}}</p>
         </li>
         <li>Block №: {{data.currentBlock}}</li>
-        <li>Network status: {{settings.network.name}}</li>
+        <li>Network: {{settings.network.name}}</li>
       </ul>
 
       <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
