@@ -32,12 +32,11 @@ hostServer.use(express.json({ extended: true }));
 
 hostServer.post('/api/writeLog', (req, res) => {
   try{
-    console.log('req', req.query);
     logger.writeLog({header: req.body.header || 'Post request', data: req.body.data});
-    res.sendStatus(200);
+    res.status(200).json({ result: 'OK' });
   } catch (e) {
     logger.writeLog({header: 'Write log action failed', data: e});
-    res.sendStatus(500);
+    res.status(500).json({ result: 'Fail' });
   }
 });
 
@@ -136,7 +135,8 @@ async function start() {
 
     ws.on("error", e => ws.send(e));
   });
-  server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
+
+  return server.listen(PORT, () => console.log(`Running on localhost: ${PORT}`));
 }
 
 
@@ -173,5 +173,5 @@ async function start() {
 
 // LOCAL SERVER
 logger.writeLog({header: 'Application launch'});
-start().then(() => logger.writeLog({header: 'Application exit'}));
+start();
 // // require('./test.js');

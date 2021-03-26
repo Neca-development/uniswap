@@ -9,8 +9,10 @@ export class LoggerService {
   constructor(private apiService: ApiService) {}
 
   async writeLog(message){
-    console.log('writeLog', environment.serverUrl + '/api/writeLog');
-    const response = await this.apiService.post(environment.serverUrl + '/api/writeLog', message);
-    await response.toPromise();
+    try{
+      await this.apiService.post(environment.serverUrl + '/api/writeLog', message);
+    } catch (e) {
+      console.log('Write log error:', e);
+    }
   }
 }

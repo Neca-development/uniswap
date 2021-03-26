@@ -18,7 +18,7 @@ export class ApiService {
 
   async post<T>(url, data = {}){
     console.log('post');
-    return await this.http.request<T>('POST', url, data);
+    return await this.request<T>(url, 'POST', data);
   }
 
   private async request<T>(
@@ -45,7 +45,6 @@ export class ApiService {
         .toPromise();
       return response;
     } catch (e) {
-
       throw e;
     }
   }
