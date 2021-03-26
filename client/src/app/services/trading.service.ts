@@ -2,10 +2,9 @@ import { IGasPriceResponse} from './../models/model';
 import { ApiService } from './api.service';
 import { ProvidersService } from './providers.service';
 import { Injectable } from '@angular/core';
-import { Fetcher, WETH, Route, Trade, TokenAmount, Percent, TradeType } from '@uniswap/sdk';
+import { Fetcher, WETH } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { environment } from './../../environments/environment';
-import { SettingsService } from './settings.service';
 import { PAIR_NO_PAIR, TOKEN_NO_TOKEN } from "./../errors/errors";
 import { Tx, Buffer } from "./../../assets/ethereumjs-tx-1.3.3.min.js";
 
@@ -14,9 +13,7 @@ import { Tx, Buffer } from "./../../assets/ethereumjs-tx-1.3.3.min.js";
 })
 export class TradingService {
 
-  // IDEA: mb should remove settings service
   constructor(
-    private settingsService: SettingsService,
     private providersService: ProvidersService,
     private apiService: ApiService
   ){}
@@ -170,7 +167,6 @@ export class TradingService {
     chainIdInput,
     inputGasPrice = 0,
     inputGasLimit,
-    inputSlippage = 1000,
     inputDeadline = 20
   ){
     const web3 = this.providersService.getProvider();
