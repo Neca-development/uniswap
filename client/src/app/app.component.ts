@@ -136,6 +136,7 @@ export class AppComponent implements OnInit {
 
   async changeGasTypeHandler({value}){
     this.swap.gasVariant = value == 'default'? false : true;
+    this.swap.gasLimit = '';
 
     if(this.swap.gasVariant){
       this.swap.gasPrice = await this.tradingService.getGasPrice(this.settings.network.chainId) / 10 ** 9 + '';
@@ -245,10 +246,10 @@ export class AppComponent implements OnInit {
 
     const response = await this.tradingService.getPairLiquidity(tokenAddress, this.settings.network.chainId);
 
-    const { errorMessage, error, weth, tokenX, tokenSymbol } = response;
+    const { sysErrorMessage, errorMessage, error, weth, tokenX, tokenSymbol } = response;
 
     if(error){
-      console.log(errorMessage);
+      console.log(errorMessage, sysErrorMessage);
       if(errorMessage == PAIR_NO_PAIR){
         this.data.liquidity = {
           ...this.data.liquidity,
@@ -406,7 +407,7 @@ export class AppComponent implements OnInit {
                   header: 'Start watch swap',
                   data: {
                     swapHash: tx.hash,
-                    liquidityHash: message.transactionHash,
+                    liquidityHash: message.hash,
                     settings: this.settings,
                     tokenData: {
                       address: this.swap.tokenAddress,
@@ -461,7 +462,7 @@ export class AppComponent implements OnInit {
                       tokenX: this.data.balance.tokenX,
                     },
                     swapHash: tx.hash,
-                    liquidityHash: message.transactionHash,
+                    liquidityHash: message.hash,
                   }
                 });
 

@@ -141,6 +141,7 @@ export class TradingService {
         }
       } catch (error) {
         return {
+          sysErrorMessage: error,
           errorMessage: PAIR_NO_PAIR,
           tokenSymbol: await this.getTokenXSymbol(tokenAddress),
           error: true,
