@@ -159,6 +159,7 @@ export class AppComponent implements OnInit {
 
       if(newSettings.network.chainId !== this.settings.network.chainId){
         this.swap.tokenAddress = '';
+        this.swap.isTokenValid = false;
         this.swap.gasVariant = false;
         this.data.isSwapWas = false;
 
@@ -193,6 +194,7 @@ export class AppComponent implements OnInit {
       } catch (error) {
         this.data.isAddressValid = false;
         this.notificationsService.openSnackBar('Check your Private Key');
+        this.loggerService.writeLog({header: 'Entered invalid Private Key', type: 'warning'});
       }
     } else {
       this.data.balance = {
@@ -232,7 +234,18 @@ export class AppComponent implements OnInit {
       if(this.swap.isTokenValid){
         try {
           this.data.balance.tokenX = await this.tradingService.getTokenXBalance(this.swap.tokenAddress, this.settings.address);
-        } catch (error) {}
+        } catch (error) {
+          this.loggerService.writeLog({
+            header: 'Failed to load tokenX balance',
+            data: {
+              tokenData: {
+                tokenAddress: this.swap.tokenAddress,
+                isValid: this.swap.isTokenValid
+              },
+            type: 'warning'
+            }
+          });
+        }
       }
 
       this.data.balance.loading = false;
