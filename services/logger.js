@@ -6,6 +6,7 @@ class Logger {
     const fileName = new Date().format('Y-MM-dd');
     logger.transports.file.fileName = fileName + '.txt';
     logger.transports.file.format = '{text}';
+    logger.transports.file.level = 'silly';
   }
 
   writeLog(message, type = 'info'){
