@@ -1,16 +1,11 @@
-const fs = require('fs');
-const path = require('path');
 const format = require('node.date-time');
+const logger = require('electron-log')
 
 class Logger {
   constructor(){
     const fileName = new Date().format('Y-MM-dd');
-    const filePath = path.resolve(__dirname, '../logs/', fileName+'.txt'); 
-
-    console.log(fileName, filePath);
-    this.logFile = filePath;
-    fs.appendFileSync( filePath, '');
-    console.log(this.logFile);
+    logger.transports.file.fileName = fileName + '.txt';
+    logger.transports.file.format = '{text}';
   }
 
   writeLog(message, type = 'info'){
@@ -24,13 +19,9 @@ class Logger {
     const messageData = message.data? JSON.stringify(message.data) + '\n' : null;
 
     console.log(messageTime, messageType, messageHeader, messageData);
-
     const messageToLog = [messageTime, messageType, messageHeader].join(' ');
-    fs.appendFileSync(this.logFile, messageToLog);
 
-    if(messageData){
-      fs.appendFileSync(this.logFile, messageData);
-    }
+    logger.info(messageToLog, messageData || '');
   }
 }
 

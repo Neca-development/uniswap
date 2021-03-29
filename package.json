@@ -18,6 +18,7 @@
     "concurrently": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
+    "electron-log": "^4.3.2",
     "ethereum-input-data-decoder": "^0.3.1",
     "ethers": "^5.0.31",
     "express": "^4.17.1",
