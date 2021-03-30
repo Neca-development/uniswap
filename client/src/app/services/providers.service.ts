@@ -1,7 +1,8 @@
+import { LoggerService } from './logger.service';
 import { Injectable } from '@angular/core';
 import { environment } from './../../environments/environment';
 import Web3 from './../../assets/web3.min.js';
-import { ethers, providers } from 'ethers';
+import { ethers } from 'ethers';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +11,8 @@ export class ProvidersService {
 
   web3: Web3;
   ethers: ethers.providers.BaseProvider;
+
+  constructor( private loggerService : LoggerService ){}
 
   getProvider(){
     return this.web3;
@@ -31,7 +34,10 @@ export class ProvidersService {
       })
     );
 
-    this.web3.eth.net.isListening().then(res => console.log('Connected to ' + network))
+    this.web3.eth.net.isListening()
+      .then(res => this.loggerService.writeLog({ header: 'Connected to network' }))
+      .catch({ header: 'Connection to network failed' });
+
     this.ethers = ethers.getDefaultProvider(network, {
       infura: environment.INFURA_PROJECT_ID,
       etherscan: environment.ETHERSCAN_API_KEY,

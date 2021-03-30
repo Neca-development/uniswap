@@ -91,15 +91,6 @@ export class TradingService {
     return blockInfo.number;
   }
 
-  getAccount(privateKey, chainIdInput){
-    const provider = this.providersService.getEthersProvider();
-
-    const signer = new ethers.Wallet(privateKey);
-    const account = signer.connect(provider);
-
-    return account;
-  }
-
   async getToken(tokenAddress, chainIdInput){
     const web3 = this.providersService.getProvider();
     const chainId = chainIdInput;
@@ -125,7 +116,7 @@ export class TradingService {
 
         const tokenABI = require('../../assets/abi-token.json');
 
-        async function getTokenAmountByAddress(tokenAddress, token = WETH[chainId]){
+        async function getTokenAmountByAddress(tokenAddress){
           const contract = new web3.eth.Contract(tokenABI, tokenAddress);
           const balance = await contract.methods.balanceOf(pair.liquidityToken.address).call();
           const decimals = await contract.methods.decimals().call();
@@ -136,11 +127,12 @@ export class TradingService {
           error: false,
           pairAddress: pair.liquidityToken.address,
           weth: await getTokenAmountByAddress(WETH[chainId].address),
-          tokenX: await getTokenAmountByAddress(tokenAddress, tokenB),
+          tokenX: await getTokenAmountByAddress(tokenAddress),
           tokenSymbol: await this.getTokenXSymbol(tokenAddress)
         }
       } catch (error) {
         return {
+          sysErrorMessage: error,
           errorMessage: PAIR_NO_PAIR,
           tokenSymbol: await this.getTokenXSymbol(tokenAddress),
           error: true,
@@ -228,8 +220,6 @@ export class TradingService {
 
       return tx;
     } catch (error) {
-      console.log(error);
-
       throw new Error(error);
     }
   }

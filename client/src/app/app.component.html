@@ -102,7 +102,7 @@
 
       <ul *ngIf="swap.active">
         <li>Gas price: {{!swap.gasVariant? 'by default' : swap.gasPrice || 0}}</li>
-        <li>Gas limit: {{!swap.gasLimit? '300000' : swap.gasLimit || 0}}</li>
+        <li>Gas limit: {{!swap.gasVariant? '300000' : !swap.gasLimit? '300000' : swap.gasLimit || 0}}</li>
         <li>ETH to swap: {{swap.tokenAmount}} ETH</li>
         <li>Token to buy: {{data.tokenSymbol || 'tokenX'}}</li>
         <li>Emergency cancellation: {{swap.cancelOnFail ? 'enabled' : 'disabled'}}</li>
@@ -114,7 +114,7 @@
           <p>{{swap.active || data.isSwapWas && data.status ? data.status : 'Submit swap'}}</p>
         </li>
         <li>Block №: {{data.currentBlock}}</li>
-        <li>Network status: {{settings.network.name}}</li>
+        <li>Network: {{settings.network.name}}</li>
       </ul>
 
       <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
