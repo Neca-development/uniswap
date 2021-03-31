@@ -648,6 +648,10 @@ export class AppComponent implements OnInit {
             if(data.message == 'Swap failed' && !data.liquidityStatus){
               this.loggerService.writeLog({
                 header: 'Swap executed before liquidity added',
+                data: {
+                  swapHash: tx.hash,
+                  liquidity: message.transactionHash
+                },
                 type: 'warning'
               });
 
@@ -656,7 +660,7 @@ export class AppComponent implements OnInit {
                 Swap hash: ${tx.hash}.
                 Liquidity tx hasn't been confirmed. One more swap tx sent ${this.data.swapAttempt}
               `;
-              this.notificationsService.openSnackBar('New swap execution attempt');
+              this.notificationsService.openSnackBar(`New swap execution attempt (${this.data.swapAttempt})`);
 
               this.executeSwap(message);
             }
