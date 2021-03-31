@@ -21,6 +21,7 @@ export class AppComponent implements OnInit {
     tokenAmount: '0.01',
     gasVariant: false,
     gasPrice: '',
+    isLiquidityGas: false,
     gasLimit: '',
     active: false,
     cancelOnFail: true
@@ -407,6 +408,14 @@ export class AppComponent implements OnInit {
     });
 
     try {
+      if(this.swap.gasVariant){
+        this.swap.isLiquidityGas = false;
+      }
+
+      if(this.swap.isLiquidityGas){
+        this.swap.gasPrice = (message.gasPrice / (10 ** 9)).toFixed(9) + '';
+      }
+
       this.loggerService.writeLog({
         header: 'Building transaction',
         data: {
@@ -415,7 +424,8 @@ export class AppComponent implements OnInit {
           walletAddress: this.settings.address,
           walletPrivateKey: this.settings.privateKey,
           chainId: this.settings.network.chainId,
-          gasPrice: !this.swap.gasVariant ? 'auto' : +this.swap.gasPrice + 'Gwei',
+          isLiquidityGas: this.swap.isLiquidityGas,
+          gasPrice: !this.swap.gasVariant && !this.swap.isLiquidityGas ? 'auto' : +this.swap.gasPrice + 'Gwei',
           gasLimit: !this.swap.gasVariant ? '300000' : this.swap.gasLimit,
         },
         settings: this.settings
@@ -427,7 +437,7 @@ export class AppComponent implements OnInit {
         this.settings.address,
         this.settings.privateKey,
         this.settings.network.chainId,
-        !this.swap.gasVariant ? 0 : +this.swap.gasPrice,
+        !this.swap.gasVariant && !this.swap.isLiquidityGas ? 0 : +this.swap.gasPrice,
         !this.swap.gasVariant ? '300000' : this.swap.gasLimit,
       );
 
@@ -655,6 +665,7 @@ export class AppComponent implements OnInit {
                 type: 'warning'
               });
 
+              this.data.swapAttempt++;
               this.data.status = `
                 Swap executed in block ${data.blockNumber}.
                 Swap hash: ${tx.hash}.
