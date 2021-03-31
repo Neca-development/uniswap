@@ -14,6 +14,7 @@ const getBlockTransacrions = require('./functions/getBlockTransacrions');
 const getPendingSubscription = require('./functions/getPendingSubscription');
 const getDataIfLiquidityTransaction = require('./functions/getDataIfLiquidityTransaction');
 const getCurrentBlockSubscription = require('./functions/getCurrentBlockSubscription');
+const getTransactionStatus = require('./functions/getTransactionStatus');
 
 const Web3 = require('web3');
 const logger = new Logger();
@@ -86,15 +87,23 @@ async function start() {
           getCurrentBlockSubscription(web3)
             .on("data", ({number}) => {
               getBlockTransacrions(web3, number)
-                .then((transactions) => {
+                .then(async (transactions) => {
                   let liquidityTx, swapTx = null;
 
                   swapTx = transactions.find((tx) => tx.hash == swapHash);
                   liquidityTx = transactions.find((tx) => tx.hash == liquidityHash);
 
+                  const swapStatus = await getTransactionStatus(web3, swapHash);
+                  const liquidityStatus = await getTransactionStatus(web3, liquidityHash);
+
                   if(swapTx && liquidityTx){
                     console.log('Have one', { liquidityTx, swapTx });
-                    ws.send(JSON.stringify({type: 'success', blockNumber: swapTx.blockNumber }));
+                    
+                    ws.send(JSON.stringify({
+                      type: 'success',
+                      swapStatus,
+                      liquidityStatus,
+                      blockNumber: swapTx.blockNumber }));
                     return;
                   }
 
@@ -102,6 +111,8 @@ async function start() {
                     console.log('Out of liquidity', { liquidityTx });
                     ws.send(JSON.stringify({
                       type: 'fail',
+                      swapStatus,
+                      liquidityStatus,
                       message: 'Out of liquidity block',
                       blockNumber: liquidityTx.blockNumber
                     }));
@@ -112,6 +123,8 @@ async function start() {
                     console.log('Swap failed', { swapTx });
                     ws.send(JSON.stringify({
                       type: 'fail',
+                      swapStatus,
+                      liquidityStatus,
                       message: 'Swap failed',
                       blockNumber: swapTx.blockNumber
                     }));
@@ -141,37 +154,41 @@ async function start() {
 
 
 // ELECTRON APP
-// let mainWindow;
+let mainWindow;
 
-// function createWindow () {
+function createWindow () {
 
-//   start();
+  start();
 
-//   //Create the browser window
-//   mainWindow = new BrowserWindow({width: 800, height: 580, resizable: false});
+  //Create the browser window
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 580,
+    resizable: false,
+  });
 
-//   mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
+  mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
 
-//   // mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
-//   mainWindow.on('close', function() {
-//       mainWindow = null;
-//   });
-// }
+  mainWindow.on('close', function() {
+      mainWindow = null;
+  });
+}
 
-// app.on('ready', () => {
-//   createWindow();
-//   logger.writeLog({header: 'Application launch'});
-// });
-// app.on('window-all-closed', function() {
-//   if (process.platform !== 'darwin') {
-//       app.quit();
-//   }
+app.on('ready', () => {
+  createWindow();
+  logger.writeLog({header: 'Application launch'});
+});
+app.on('window-all-closed', function() {
+  if (process.platform !== 'darwin') {
+      app.quit();
+  }
   
-//   logger.writeLog({header: 'Application exit'});
-// });
+  logger.writeLog({header: 'Application exit'});
+});
 
 // LOCAL SERVER
-logger.writeLog({header: 'Application launch'});
-start();
+// logger.writeLog({header: 'Application launch'});
+// start();
 // // require('./test.js');
