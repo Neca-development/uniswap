@@ -69,6 +69,10 @@
         </mat-button-toggle-group>
       </div>
 
+      <div *ngIf="!swap.gasVariant" class="settings-fields">
+        <mat-checkbox [checked]="swap.isLiquidityGas" (change)="swap.isLiquidityGas = !swap.isLiquidityGas">Gas price equals to liquidity tx</mat-checkbox>
+      </div>
+
       <div *ngIf="swap.gasVariant" class="settings-fields">
         <mat-form-field>
           <mat-label>Gas price</mat-label>

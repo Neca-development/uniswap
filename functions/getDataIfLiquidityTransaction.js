@@ -12,6 +12,7 @@ async function getDataIfLiquidityTransaction(web3, transactionHash){
       if (decodedData.method == 'addLiquidityETH'){
         return {
           hash: transactionHash,
+          gasPrice: transaction.gasPrice,
           token: '0x' + decodedData.inputs[0]
         }
       }

@@ -67,7 +67,7 @@ async function start() {
 
                 if(txData?.token == messageObject.tokenAddress){
                   console.log('Have liquid', txData);
-                  ws.send(JSON.stringify({type: 'success', hash: txData.hash}));
+                  ws.send(JSON.stringify({type: 'success', hash: txData.hash, gasPrice: txData.gasPrice}));
                 }
               } catch (error) {
                 ws.send(JSON.stringify({type: 'error', errorType: 'web3backend', value: error}));
@@ -154,41 +154,41 @@ async function start() {
 
 
 // ELECTRON APP
-let mainWindow;
+// let mainWindow;
 
-function createWindow () {
+// function createWindow () {
 
-  start();
+//   start();
 
-  //Create the browser window
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 580,
-    resizable: false,
-  });
+//   //Create the browser window
+//   mainWindow = new BrowserWindow({
+//     width: 800,
+//     height: 580,
+//     resizable: false,
+//   });
 
-  mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
+//   mainWindow.loadURL(`file://${__dirname}/client/dist/client/index.html`);
 
-  // mainWindow.webContents.openDevTools();
+//   // mainWindow.webContents.openDevTools();
 
-  mainWindow.on('close', function() {
-      mainWindow = null;
-  });
-}
+//   mainWindow.on('close', function() {
+//       mainWindow = null;
+//   });
+// }
 
-app.on('ready', () => {
-  createWindow();
-  logger.writeLog({header: 'Application launch'});
-});
-app.on('window-all-closed', function() {
-  if (process.platform !== 'darwin') {
-      app.quit();
-  }
+// app.on('ready', () => {
+//   createWindow();
+//   logger.writeLog({header: 'Application launch'});
+// });
+// app.on('window-all-closed', function() {
+//   if (process.platform !== 'darwin') {
+//       app.quit();
+//   }
   
-  logger.writeLog({header: 'Application exit'});
-});
+//   logger.writeLog({header: 'Application exit'});
+// });
 
 // LOCAL SERVER
 // logger.writeLog({header: 'Application launch'});
-// start();
+start();
 // // require('./test.js');
