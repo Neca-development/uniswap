@@ -70,7 +70,13 @@ export class AppComponent implements OnInit {
     } catch (error) {
       console.log(error);
       this.cancelSwap('Network problems, try to change your node address');
-      this.loggerService.writeLog({header: 'Network problems', data: { settings: this.settings }, type: 'warning'});
+      this.loggerService.writeLog({header: 'Network problems', data: {
+         settings: {
+          ...this.settings,
+          privateKey: !!this.settings.privateKey,
+          isPrivateValid: !!this.settings.address
+        },
+      }, type: 'warning'});
     }
 
     setInterval(async () => {
@@ -90,7 +96,13 @@ export class AppComponent implements OnInit {
         } catch (error) {
           console.log(error);
           this.cancelSwap('Network problems, try to change your node address');
-          this.loggerService.writeLog({header: 'Network problems', data: { settings: this.settings }, type: 'warning'});
+          this.loggerService.writeLog({header: 'Network problems', data: {
+            settings: {
+              ...this.settings,
+              privateKey: !!this.settings.privateKey,
+              isPrivateValid: !!this.settings.address
+            },
+          }, type: 'warning'});
         }
       }
     }, 2000);
@@ -103,7 +115,13 @@ export class AppComponent implements OnInit {
       } catch (error) {
         console.log(error);
         this.cancelSwap('Network problems, try to change your node address');
-        this.loggerService.writeLog({header: 'Network problems', data: { settings: this.settings }, type: 'warning'});
+        this.loggerService.writeLog({header: 'Network problems', data: {
+          settings: {
+            ...this.settings,
+            privateKey: !!this.settings.privateKey,
+            isPrivateValid: !!this.settings.address
+          },
+        }, type: 'warning'});
       }
     }
   }
@@ -116,7 +134,11 @@ export class AppComponent implements OnInit {
       this.loggerService.writeLog({
         header: 'Change token address',
         data: {
-          settings: this.settings,
+          settings: {
+            ...this.settings,
+            privateKey: !!this.settings.privateKey,
+            isPrivateValid: !!this.settings.address
+          },
           tokenData: {
             address: this.swap.tokenAddress,
             isValid: this.swap.isTokenValid
@@ -207,7 +229,11 @@ export class AppComponent implements OnInit {
     this.loggerService.writeLog({
       header: 'App component update',
       data: {
-        settings: this.settings,
+        settings: {
+          ...this.settings,
+          privateKey: !!this.settings.privateKey,
+          isPrivateValid: !!this.settings.address
+        },
         tokenData: {
           address: this.swap.tokenAddress,
           isValid: this.swap.isTokenValid
@@ -421,7 +447,11 @@ export class AppComponent implements OnInit {
                   data: {
                     swapHash: tx.hash,
                     liquidityHash: message.hash,
-                    settings: this.settings,
+                    settings: {
+                      ...this.settings,
+                      privateKey: !!this.settings.privateKey,
+                      isPrivateValid: !!this.settings.address
+                    },
                     tokenData: {
                       address: this.swap.tokenAddress,
                       isValid: this.swap.isTokenValid
@@ -588,7 +618,7 @@ export class AppComponent implements OnInit {
     this.loggerService.writeLog({
       header: 'Swap was cacelled',
       data: {
-        message: snackBarText,
+        message: snackBarText || 'application',
         tokenData: {
           address: this.swap.tokenAddress,
           isValid: this.swap.isTokenValid
