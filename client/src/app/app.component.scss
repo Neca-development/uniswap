@@ -1,0 +1,77 @@
+h2{
+  margin: 0;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+ul{
+  margin: 0px 0px 1rem 0px;
+  padding: 0;
+
+  li{
+    list-style: none;
+  }
+}
+
+.main-container{
+  padding: 0px 1rem;
+  max-width: 800px;
+  margin:0 auto;
+}
+
+.content{
+  display: grid;
+  grid-template-columns: 46% 46%;
+  grid-template-rows: 180px 1fr;
+  gap: 0px 8%;
+}
+
+.pair{
+  &-data{
+    display: flex;
+    gap: 2rem;
+
+    & p {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.settings{
+  &-fields{
+    max-width: 100%;
+    display: flex;
+    gap: 8%;
+    & > mat-form-field{
+      width: 46%;
+    }
+    margin-bottom: .5rem;
+  }
+
+  &-price{
+    & > mat-button-toggle{
+      box-sizing: border-box;
+      width: 50%;
+    }
+  }
+
+  &-submit{
+    display: flex;
+    justify-content: space-between;
+    gap: 8%;
+
+    & mat-checkbox{
+      width: 46%;
+      align-self: center;
+    }
+
+    & button{
+      width: 46%;
+    }
+  }
+}
+
+.active-settings{
+  overflow-y: auto;
+}
+

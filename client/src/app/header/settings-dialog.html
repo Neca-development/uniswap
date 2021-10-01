@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Settings</h2>
+<mat-dialog-content class="mat-typography">
+  <div>
+    <mat-form-field class="fluid mb-1" isRequired="true">
+      <mat-label>Private key</mat-label>
+      <input matInput placeholder="Enter your Private key" [value]="settings.privateKey" (change)="changeHandler('privateKey', $event)">
+    </mat-form-field>
+  </div>
+  <div>
+    <mat-form-field class="fluid mb-1" isRequired="true">
+      <mat-label>Node address</mat-label>
+      <input matInput placeholder="Enter your node address" [value]="settings.network.nodeAddress" (input)="changeNetworkHandler($event)">
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="center" class="fluid">
+  <button mat-button [mat-dialog-close]="false">Cancel</button>
+  <button mat-button color="primary" cdkFocusInitial (click)="saveClick()">Save</button>
+</mat-dialog-actions>

@@ -1,0 +1,129 @@
+<div class="main-container">
+  <app-header (changeSettings)="checkSaveAction($event)"></app-header>
+
+  <div class="content">
+
+    <div class="pair">
+      <h2>Token pair</h2>
+      <mat-form-field class="fluid mb-1">
+        <mat-label>Token address</mat-label>
+        <input
+          matInput
+          placeholder="Paste token address"
+          name="tokenAddress"
+          [value]="swap.tokenAddress"
+          (change)="changeHandler('tokenAddress', $event)"
+        />
+        <!-- Error working wrong -->
+        <mat-error *ngIf="!swap.isTokenValid">Invalid token address</mat-error>
+      </mat-form-field>
+      <div class="pair-data" *ngIf="swap.tokenAddress && data.isNetworkValid">
+        <p>{{!data.liquidity.isLoaderShown? data.tokenSymbol : 'tokenX'}} - ETH</p>
+        <p *ngIf="!data.liquidity.isLoaderShown && swap.isTokenValid && !data.liquidity.error">
+          Liquidity: <br>
+          {{data.liquidity.tokenX}} {{data.tokenSymbol}} <br>
+          {{data.liquidity.weth}} ETH
+        </p>
+        <p *ngIf="!data.liquidity.isLoaderShown && swap.isTokenValid && data.liquidity.error">There is no pair with this token and ETH</p>
+        <p *ngIf="!data.liquidity.loading && !swap.isTokenValid">Invalid token address</p>
+        <p *ngIf="data.liquidity.isLoaderShown">Loading liqudity data...</p>
+      </div>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
+    </div>
+
+    <div class="wallet">
+      <h2>Wallet balance</h2>
+      <ul *ngIf="settings.privateKey && settings.address && data.isAddressValid">
+        <li *ngIf="!data.balance.isLoaderShown">{{data.balance.eth}} ETH</li>
+        <li *ngIf="!data.balance.isLoaderShown && swap.tokenAddress && swap.isTokenValid && !data.liquidity.isLoaderShown">{{data.balance.tokenX}} {{data.tokenSymbol}}</li>
+        <li *ngIf="data.balance.loading && data.balance.isLoaderShown">Loading balance...</li>
+        <li *ngIf="!data.balance.loading && data.liquidity.isLoaderShown">Loading tokenX balance...</li>
+        <li *ngIf="!data.liquidity.loading && !swap.isTokenValid">Enter token address to get balance of tokenX</li>
+      </ul>
+      <p *ngIf="!settings.privateKey">Enter Private Key in settings</p>
+      <p *ngIf="settings.privateKey && !data.isAddressValid && data.isNetworkValid">Check your Private Key in settings</p>
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
+    </div>
+
+    <div class="settings">
+      <h2>Swap settings</h2>
+
+      <div>
+        <mat-form-field class="fluid">
+          <mat-label>ETH amount to swap</mat-label>
+          <input
+            matInput
+            placeholder="Enter ETH amount to swap"
+            name="tokenAmount"
+            [value]="swap.tokenAmount"
+            (input)="changeHandler('tokenAmount', $event)"
+          />
+        </mat-form-field>
+      </div>
+
+      <div class="mb-1">
+        <mat-label>Gas settings</mat-label>
+        <mat-button-toggle-group name="gasSettings" class="fluid settings-price" aria-label="Gas Settings" (change)="changeGasTypeHandler($event)">
+          <mat-button-toggle value="default" [checked]="!swap.gasVariant">By default</mat-button-toggle>
+          <mat-button-toggle value="manual" [checked]="swap.gasVariant">Manual</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <div *ngIf="!swap.gasVariant" class="settings-fields">
+        <mat-checkbox [checked]="swap.isLiquidityGas" (change)="swap.isLiquidityGas = !swap.isLiquidityGas">Gas price equals to liquidity tx</mat-checkbox>
+      </div>
+
+      <div *ngIf="swap.gasVariant" class="settings-fields">
+        <mat-form-field>
+          <mat-label>Gas price</mat-label>
+          <input
+            matInput
+            placeholder="Enter gas price"
+            [value]="swap.gasPrice"
+            (input)="changeHandler('gasPrice', $event)"
+          />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Gas limit</mat-label>
+          <input
+            matInput
+            placeholder="Enter gas limit"
+            [value]="0"
+            (input)="changeHandler('gasLimit', $event)"
+          />
+        </mat-form-field>
+      </div>
+
+      <div class="settings-submit" >
+        <mat-checkbox [checked]="swap.cancelOnFail" (change)="swap.cancelOnFail = !swap.cancelOnFail">Auto cancel</mat-checkbox>
+        <button mat-raised-button color="primary" (click)="submitSwap()" *ngIf="!swap.active">Submit</button>
+        <button mat-raised-button color="warn" (click)="cancelSwap()" *ngIf="swap.active">Cancel</button>
+      </div>
+    </div>
+
+    <div class="active-settings">
+      <h2>Active swap settings</h2>
+
+      <ul *ngIf="swap.active">
+        <li>Gas price: {{!swap.gasVariant? 'by default' : swap.gasPrice || 0}}</li>
+        <li>Gas limit: {{!swap.gasVariant? '300000' : !swap.gasLimit? '300000' : swap.gasLimit || 0}}</li>
+        <li>ETH to swap: {{swap.tokenAmount}} ETH</li>
+        <li>Token to buy: {{data.tokenSymbol || 'tokenX'}}</li>
+        <li>Emergency cancellation: {{swap.cancelOnFail ? 'enabled' : 'disabled'}}</li>
+      </ul>
+      <p *ngIf="!swap.active">Nothing to display</p>
+
+      <ul *ngIf="data.isNetworkValid">
+        <li>Swap status:
+          <p>{{swap.active || data.isSwapWas && data.status ? data.status : 'Submit swap'}}</p>
+        </li>
+        <li>Block №: {{data.currentBlock}}</li>
+        <li>Network: {{settings.network.name}}</li>
+      </ul>
+
+      <p *ngIf="!data.isNetworkValid">Enter your node address in settings</p>
+    </div>
+
+  </div>
+</div>
+
